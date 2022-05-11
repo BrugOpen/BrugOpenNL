@@ -1,0 +1,11 @@
+{
+	"name" : "brugopen/brugopen",
+	"require" : {
+		"minishlink/web-push" : "^1"
+	},
+	"autoload" : {
+		"psr-4" : {
+			"BrugOpen\\" : "src/BrugOpen"
+		}
+	}
+}
