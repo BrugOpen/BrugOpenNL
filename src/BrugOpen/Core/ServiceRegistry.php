@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Core;
 
 class ServiceRegistry
@@ -63,13 +62,10 @@ class ServiceRegistry
                         if (class_exists($serviceFactoryClassName, true)) {
 
                             $serviceFactory = new $serviceFactoryClassName();
-
                         } else {
 
                             trigger_error('Could not create service factory instance for ' . $serviceFactory, E_USER_NOTICE);
-
                         }
-
                     }
 
                     if (is_object($serviceFactory)) {
@@ -80,23 +76,17 @@ class ServiceRegistry
 
                             $this->services[$serviceName] = $service;
                         }
-
                     }
-
                 }
-
             }
 
             if (array_key_exists($serviceName, $this->services)) {
 
                 $service = $this->services[$serviceName];
-
             }
-
         }
 
         return $service;
-
     }
 
     /**

@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Core;
 
 class DefaultEventListener
@@ -7,21 +6,16 @@ class DefaultEventListener
 
     /**
      *
-     * @var Context
+     * @var \BrugOpen\Core\Context
      */
     private $context;
 
     /**
      *
-     * @param Context $context
+     * @param \BrugOpen\Core\Context $context
      */
     public function onContextInitialized($context)
     {
-
         $this->context = $context;
-
-        echo 'context initialized, add default listeners';
-
     }
-
 }

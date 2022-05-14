@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Core;
 
 use BrugOpen\Service\DataStore;
@@ -37,7 +36,6 @@ class Context
      */
     public function initialize($param = null)
     {
-
         if ($param != null) {
 
             if (is_string($param)) {
@@ -45,13 +43,13 @@ class Context
             } elseif (is_object($param)) {
                 $this->config = $param;
             }
-
         }
 
         // create event dispatcher
         $eventDispatcher = $this->getEventDispatcher();
-        $eventDispatcher->postEvent('Context.initialized', array($this));
-
+        $eventDispatcher->postEvent('Context.initialized', array(
+            $this
+        ));
     }
 
     /**
@@ -61,10 +59,10 @@ class Context
     {
 
         // shutdown initialized services if needed
-
         $eventDispatcher = $this->getEventDispatcher();
-        $eventDispatcher->postEvent('Context.shutdown', array($this));
-
+        $eventDispatcher->postEvent('Context.shutdown', array(
+            $this
+        ));
     }
 
     public function getConfig()
@@ -74,14 +72,12 @@ class Context
 
     public function getDataStore()
     {
-
-        if (!$this->dataStore) {
+        if (! $this->dataStore) {
 
             $dataStore = new DataStore();
             $dataStore->initialize($this);
 
             $this->dataStore = $dataStore;
-
         }
 
         return $this->dataStore;
@@ -121,7 +117,6 @@ class Context
             if ($serviceRegistry = $this->getServiceRegistry()) {
 
                 $service = $serviceRegistry->getService($serviceName);
-
             }
         }
 

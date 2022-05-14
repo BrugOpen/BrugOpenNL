@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Core;
 
 interface ServiceFactory
@@ -8,8 +7,9 @@ interface ServiceFactory
     /**
      *
      * @param string $serviceName
-     * @param Context $context
-     * @param object
+     * @param \BrugOpen\Core\Context $context
+     * @param
+     *            object
      */
     public function createService($serviceName, $context);
 }

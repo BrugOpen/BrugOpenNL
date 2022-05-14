@@ -1,49 +1,47 @@
 <?php
-
 namespace BrugOpen\Core;
 
 class Config
 {
 
-	private $env;
+    private $env;
 
-	private $params;
+    private $params;
 
-	const ENVIRONMENT_DEFAULT = 'default';
+    const ENVIRONMENT_DEFAULT = 'default';
 
-	public function __construct($env, $params)
-	{
-		$this->env = $env;
-		$this->params = $params;
-	}
+    public function __construct($env, $params)
+    {
+        $this->env = $env;
+        $this->params = $params;
+    }
 
-	public function getParam($name)
-	{
-		if (array_key_exists($name, $this->params)) {
-			return $this->params[$name];
-		}
+    public function getParam($name)
+    {
+        if (array_key_exists($name, $this->params)) {
+            return $this->params[$name];
+        }
 
-		return null;
-	}
+        return null;
+    }
 
-	public function getParams()
-	{
-		return $this->params;
-	}
+    public function getParams()
+    {
+        return $this->params;
+    }
 
-	public function setParam($name, $value)
-	{
-		$this->params[$name] = $value;
-	}
+    public function setParam($name, $value)
+    {
+        $this->params[$name] = $value;
+    }
 
-	public function getEnvironment()
-	{
-		return $this->env;
-	}
+    public function getEnvironment()
+    {
+        return $this->env;
+    }
 
-	public function setEnvironment($env)
-	{
-		$this->env = $env;
-	}
-
+    public function setEnvironment($env)
+    {
+        $this->env = $env;
+    }
 }

@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Core;
 
 interface ContextFactory
@@ -8,8 +7,7 @@ interface ContextFactory
     /**
      *
      * @param string $appRoot
-     * @return Context
+     * @return \BrugOpen\Core\Context
      */
     public function createContext($appRoot);
-
 }

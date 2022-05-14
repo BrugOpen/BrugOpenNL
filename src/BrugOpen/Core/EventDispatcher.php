@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Core;
 
 class EventDispatcher
@@ -138,7 +137,5 @@ class EventDispatcher
             $pluginFunction,
             $callbackGroup
         );
-
     }
-
 }
