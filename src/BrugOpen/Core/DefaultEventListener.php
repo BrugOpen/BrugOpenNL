@@ -17,5 +17,21 @@ class DefaultEventListener
     public function onContextInitialized($context)
     {
         $this->context = $context;
+
+        $context->getEventDispatcher()->addObserver('ServiceRegistry.initialize', array(
+            $this,
+            'onServiceRegistryInitialize'
+        ));
+    }
+
+    /**
+     *
+     * @param ServiceRegistry $serviceRegistry
+     */
+    public function onServiceRegistryInitialize($serviceRegistry)
+    {
+        $serviceFactory = new DefaultServiceFactory();
+
+        $serviceRegistry->registerServiceFactory('BrugOpen.NdwQueueProcessor', $serviceFactory);
     }
 }
