@@ -56,6 +56,12 @@ class SituationRecord
 
     /**
      *
+     * @var \BrugOpen\Datex\Model\Management
+     */
+    private $management;
+
+    /**
+     *
      * @var string
      */
     private $operatorActionStatus;
@@ -214,6 +220,24 @@ class SituationRecord
     public function setGroupOfLocations($groupOfLocations)
     {
         $this->groupOfLocations = $groupOfLocations;
+    }
+
+    /**
+     *
+     * @return \BrugOpen\Datex\Model\Management
+     */
+    public function getManagement()
+    {
+        return $this->management;
+    }
+
+    /**
+     *
+     * @param Management $management
+     */
+    public function setManagement($management)
+    {
+        $this->management = $management;
     }
 
     /**
