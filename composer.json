@@ -1,8 +1,9 @@
 {
 	"name": "brugopen/brugopen",
+	"type": "project",
 	"require": {
 		"minishlink/web-push": "^1",
-		"monolog/monolog":"*"
+		"monolog/monolog": "*"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "*"
@@ -11,5 +12,8 @@
 		"psr-4": {
 			"BrugOpen\\" : "src/BrugOpen"
 		}
+	},
+	"scripts": {
+		"test": "vendor/bin/phpunit --bootstrap vendor/autoload.php --testdox tests"
 	}
 }
