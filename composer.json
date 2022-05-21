@@ -1,5 +1,6 @@
 {
 	"name": "brugopen/brugopen",
+	"description" : "The PHP engine that runs brugopen.nl",
 	"type": "project",
 	"require": {
 		"minishlink/web-push": "^1",
