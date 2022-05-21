@@ -6,9 +6,12 @@ use BrugOpen\Datex\Model\AlertCLocation;
 use BrugOpen\Datex\Model\AlertCMethod2PrimaryPointLocation;
 use BrugOpen\Datex\Model\AlertCPoint;
 use BrugOpen\Datex\Model\Exchange;
+use BrugOpen\Datex\Model\FilterExitManagement;
 use BrugOpen\Datex\Model\HeaderInformation;
 use BrugOpen\Datex\Model\InternationalIdentifier;
+use BrugOpen\Datex\Model\LifeCycleManagement;
 use BrugOpen\Datex\Model\LogicalModel;
+use BrugOpen\Datex\Model\Management;
 use BrugOpen\Datex\Model\MultiLingualString;
 use BrugOpen\Datex\Model\OverallPeriod;
 use BrugOpen\Datex\Model\PayloadPublication;
@@ -481,6 +484,31 @@ class DatexFileParser
                     $groupOfLocations->setPointByCoordinates($pointByCoordinates);
                 }
                 $situationRecord->setGroupOfLocations($groupOfLocations);
+            }
+
+            if ($managementNode = $this->getSubNode($situationRecordNode, 'management')) {
+
+                $management = new Management();
+
+                if ($lifeCycleManagementNode = $this->getSubNode($managementNode, 'lifeCycleManagement')) {
+
+                    $lifeCycleManagement = new LifeCycleManagement();
+                    $lifeCycleManagement->setCancel($this->parseBooleanString($this->getSubNodeValue($lifeCycleManagementNode, 'cancel')));
+                    $lifeCycleManagement->setEnd($this->parseBooleanString($this->getSubNodeValue($lifeCycleManagementNode, 'end')));
+
+                    $management->setLifeCycleManagement($lifeCycleManagement);
+                }
+
+                if ($filterExitManagementNode = $this->getSubNode($managementNode, 'filterExitManagement')) {
+
+                    $filterExitManagement = new FilterExitManagement();
+                    $filterExitManagement->setCancel($this->parseBooleanString($this->getSubNodeValue($filterExitManagementNode, 'filterEnd')));
+                    $filterExitManagement->setEnd($this->parseBooleanString($this->getSubNodeValue($filterExitManagementNode, 'filterOutOfRange')));
+
+                    $management->setFilterExitManagement($filterExitManagement);
+                }
+
+                $situationRecord->setManagement($management);
             }
 
             $situationRecord->setOperatorActionStatus($this->getSubNodeValue($situationRecordNode, 'operatorActionStatus'));
