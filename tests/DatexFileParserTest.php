@@ -441,4 +441,82 @@ class DatexFileParserTest extends TestCase
 
         $this->assertCount(1618, $situations);
     }
+
+    public function testParsePushMessageWithLifeCycleEnd()
+    {
+        $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
+
+        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-end.xml.gz';
+
+        $parser = new DatexFileParser();
+
+        $logicalModel = $parser->parseFile($testFile);
+
+        $this->assertNotNull($logicalModel);
+
+        $this->assertNotNull($logicalModel->getPayloadPublication());
+
+        $this->assertNotNull($logicalModel->getPayloadPublication()
+            ->getSituations());
+
+        $situations = $logicalModel->getPayloadPublication()->getSituations();
+
+        $this->assertCount(1, $situations);
+
+        $situation = $situations[0];
+
+        $this->assertNotNull($situation);
+
+        $situationRecord = $situation->getSituationRecord();
+
+        $this->assertNotNull($situationRecord->getManagement());
+        $this->assertNotNull($situationRecord->getManagement()
+            ->getLifeCycleManagement());
+        $this->assertTrue($situationRecord->getManagement()
+            ->getLifeCycleManagement()
+            ->getEnd());
+
+        $this->assertEquals('beingTerminated', $situationRecord->getOperatorActionStatus());
+        $this->assertEquals('mandatory', $situationRecord->getComplianceOption());
+        $this->assertEquals('bridgeSwingInOperation', $situationRecord->getGeneralNetworkManagementType());
+    }
+
+    public function testParsePushMessageWithLifeCycleCancel()
+    {
+        $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
+
+        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-cancel.xml';
+
+        $parser = new DatexFileParser();
+
+        $logicalModel = $parser->parseFile($testFile);
+
+        $this->assertNotNull($logicalModel);
+
+        $this->assertNotNull($logicalModel->getPayloadPublication());
+
+        $this->assertNotNull($logicalModel->getPayloadPublication()
+            ->getSituations());
+
+        $situations = $logicalModel->getPayloadPublication()->getSituations();
+
+        $this->assertCount(1, $situations);
+
+        $situation = $situations[0];
+
+        $this->assertNotNull($situation);
+
+        $situationRecord = $situation->getSituationRecord();
+
+        $this->assertNotNull($situationRecord->getManagement());
+        $this->assertNotNull($situationRecord->getManagement()
+            ->getLifeCycleManagement());
+        $this->assertTrue($situationRecord->getManagement()
+            ->getLifeCycleManagement()
+            ->getCancel());
+
+        $this->assertEquals('approved', $situationRecord->getOperatorActionStatus());
+        $this->assertEquals('mandatory', $situationRecord->getComplianceOption());
+        $this->assertEquals('bridgeSwingInOperation', $situationRecord->getGeneralNetworkManagementType());
+    }
 }
