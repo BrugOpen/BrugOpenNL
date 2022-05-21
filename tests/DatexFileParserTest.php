@@ -485,7 +485,7 @@ class DatexFileParserTest extends TestCase
     {
         $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
 
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-cancel.xml';
+        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-cancel.xml.gz';
 
         $parser = new DatexFileParser();
 
