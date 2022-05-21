@@ -1,6 +1,7 @@
 {
 	"name": "brugopen/brugopen",
 	"description" : "The PHP engine that runs brugopen.nl",
+	"license": "Apache-2.0",
 	"type": "project",
 	"require": {
 		"minishlink/web-push": "^1",
