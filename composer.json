@@ -1,7 +1,8 @@
 {
 	"name": "brugopen/brugopen",
 	"require": {
-		"minishlink/web-push": "^1"
+		"minishlink/web-push": "^1",
+		"monolog/monolog":"*"
 	},
 	"require-dev": {
 		"phpunit/phpunit": "*"
