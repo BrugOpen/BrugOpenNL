@@ -1,7 +1,9 @@
 <?php
 namespace BrugOpen\Core;
 
+use BrugOpen\Service\ConfigLoader;
 use BrugOpen\Service\DataStore;
+use Grip\Vwm\Db\Service\DatabaseConnectionManager;
 
 class Context
 {
@@ -26,9 +28,35 @@ class Context
 
     /**
      *
+     * @var LogRegistry
+     */
+    private $logRegistry;
+
+    /**
+     *
      * @var DataStore
      */
     private $dataStore;
+
+    /**
+     *
+     * @var DatabaseConnectionManager
+     */
+    private $databaseConnectionManager;
+
+    /**
+     *
+     * @var ServiceRegistry
+     */
+    private $serviceRegistry;
+
+    public function __construct($param = null)
+    {
+        if (is_string($param)) {
+            // assume appRoot
+            $this->appRoot = $param;
+        }
+    }
 
     /**
      *
@@ -65,8 +93,25 @@ class Context
         ));
     }
 
+    /**
+     *
+     * @return string
+     */
+    public function getAppRoot()
+    {
+        return $this->appRoot;
+    }
+
     public function getConfig()
     {
+        if (! $this->config) {
+
+            $iniFile = $this->appRoot . 'config.ini';
+
+            $configLoader = new ConfigLoader();
+            $this->config = $configLoader->loadConfig($iniFile);
+        }
+
         return $this->config;
     }
 
@@ -105,6 +150,23 @@ class Context
 
     /**
      *
+     * @return LogRegistry
+     */
+    public function getLogRegistry()
+    {
+        if ($this->logRegistry == null) {
+
+            $logRegistry = new LogRegistry();
+            $logRegistry->initialize($this);
+
+            $this->logRegistry = $logRegistry;
+        }
+
+        return $this->logRegistry;
+    }
+
+    /**
+     *
      * @param string $serviceName
      * @return NULL|object
      */
@@ -138,5 +200,22 @@ class Context
         }
 
         return $this->serviceRegistry;
+    }
+
+    /**
+     *
+     * @return \Grip\Vwm\Db\Service\DatabaseConnectionManager
+     */
+    public function getDatabaseConnectionManager()
+    {
+        if ($this->databaseConnectionManager == null) {
+
+            $databaseConnectionManager = new DatabaseConnectionManager();
+            $databaseConnectionManager->initialize($this);
+
+            $this->databaseConnectionManager = $databaseConnectionManager;
+        }
+
+        return $this->databaseConnectionManager;
     }
 }
