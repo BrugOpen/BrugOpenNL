@@ -1,6 +1,6 @@
 <?php
 
-namespace Grip\Vwm\Db\Service;
+namespace BrugOpen\Db\Service;
 
 interface RecordFinder
 {

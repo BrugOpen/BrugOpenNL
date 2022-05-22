@@ -3,7 +3,7 @@ namespace BrugOpen\Core;
 
 use BrugOpen\Service\ConfigLoader;
 use BrugOpen\Service\DataStore;
-use Grip\Vwm\Db\Service\DatabaseConnectionManager;
+use BrugOpen\Db\Service\DatabaseConnectionManager;
 
 class Context
 {
@@ -204,7 +204,7 @@ class Context
 
     /**
      *
-     * @return \Grip\Vwm\Db\Service\DatabaseConnectionManager
+     * @return \BrugOpen\Db\Service\DatabaseConnectionManager
      */
     public function getDatabaseConnectionManager()
     {

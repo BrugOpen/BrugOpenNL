@@ -1,5 +1,5 @@
 <?php
-namespace Grip\Vwm\Db\Service;
+namespace BrugOpen\Db\Service;
 
 use BrugOpen\Core\Context;
 

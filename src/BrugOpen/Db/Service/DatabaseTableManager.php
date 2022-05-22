@@ -1,5 +1,5 @@
 <?php
-namespace Grip\Vwm\Db\Service;
+namespace BrugOpen\Db\Service;
 
 class DatabaseTableManager implements TableManager
 {
@@ -22,7 +22,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\RecordFinder::findRecords()
+     * @see \BrugOpen\Db\Service\RecordFinder::findRecords()
      */
     public function findRecords($table, $criteria = null, $fields = null, $orders = null, $maxResults = null, $offset = null)
     {
@@ -93,7 +93,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\TableManager::insertRecords()
+     * @see \BrugOpen\Db\Service\TableManager::insertRecords()
      */
     public function insertRecords($table, $records)
     {
@@ -108,7 +108,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\TableManager::updateRecords()
+     * @see \BrugOpen\Db\Service\TableManager::updateRecords()
      */
     public function updateRecords($table, $values, $criteria)
     {
@@ -206,7 +206,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\TableManager::removeRecords()
+     * @see \BrugOpen\Db\Service\TableManager::removeRecords()
      */
     public function deleteRecords($table, $criteria = null, $limit = null)
     {
@@ -291,7 +291,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\TableManager::insertRecord()
+     * @see \BrugOpen\Db\Service\TableManager::insertRecord()
      */
     public function insertRecord($table, $record)
     {
@@ -345,7 +345,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\RecordFinder::findRecord()
+     * @see \BrugOpen\Db\Service\RecordFinder::findRecord()
      */
     public function findRecord($table, $parameters, $fields = null)
     {
@@ -362,7 +362,7 @@ class DatabaseTableManager implements TableManager
     /**
      *
      * {@inheritdoc}
-     * @see \Grip\Vwm\Db\Service\RecordFinder::countRecords()
+     * @see \BrugOpen\Db\Service\RecordFinder::countRecords()
      */
     public function countRecords($table, $parameters = null)
     {}
