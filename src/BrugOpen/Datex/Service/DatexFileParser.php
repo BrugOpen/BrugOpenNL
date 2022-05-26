@@ -102,6 +102,8 @@ class DatexFileParser
                     }
                 }
             }
+
+            $xmlReader->close();
         }
 
         return $logicalModel;
