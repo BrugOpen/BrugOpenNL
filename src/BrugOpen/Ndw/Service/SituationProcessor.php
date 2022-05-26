@@ -261,4 +261,14 @@ class SituationProcessor
             $this->context->getEventDispatcher()->postEvent('Ndw.Situation.update', $situationId);
         }
     }
+
+    public function checkUnfinishedOperations($publicationDateTime)
+    {
+        // loop through all unfinished operations
+        $keys = array();
+        $keys['finished'] = 0;
+        $unfinishedOperations = $this->dataStore->findRecords('bo_operation', $keys);
+
+        foreach ($unfinishedOperations as $activeOperation) {}
+    }
 }
