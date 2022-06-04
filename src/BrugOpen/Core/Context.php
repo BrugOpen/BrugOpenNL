@@ -1,9 +1,9 @@
 <?php
 namespace BrugOpen\Core;
 
+use BrugOpen\Db\Service\DatabaseConnectionManager;
 use BrugOpen\Service\ConfigLoader;
 use BrugOpen\Service\DataStore;
-use BrugOpen\Db\Service\DatabaseConnectionManager;
 
 class Context
 {
@@ -141,7 +141,7 @@ class Context
     {
         if ($this->eventDispatcher == null) {
 
-            $eventDispatcher = new EventDispatcher($this);
+            $eventDispatcher = new EventDispatcher();
             $this->eventDispatcher = $eventDispatcher;
         }
 

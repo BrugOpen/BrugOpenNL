@@ -35,14 +35,11 @@ class EventDispatcher
 
     /**
      *
-     * @var Context
-     */
-    private $context;
-
-    /**
      * Constructor.
+     *
+     * @param callable[] $observers
      */
-    public function __construct(Context $context, array $observers = array())
+    public function __construct(array $observers = array())
     {
         foreach ($observers as $observerInfo) {
             list ($eventName, $callback) = $observerInfo;
