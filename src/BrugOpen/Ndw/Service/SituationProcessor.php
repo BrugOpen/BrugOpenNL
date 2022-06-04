@@ -1,7 +1,9 @@
 <?php
 namespace BrugOpen\Ndw\Service;
 
-use BrugOpen\Service\DataStore;
+use BrugOpen\Core\EventDispatcher;
+use BrugOpen\Db\Service\DatabaseTableManager;
+use BrugOpen\Db\Service\TableManager;
 
 class SituationProcessor
 {
@@ -20,9 +22,15 @@ class SituationProcessor
 
     /**
      *
-     * @var DataStore
+     * @var TableManager
      */
-    private $dataStore;
+    private $tableManager;
+
+    /**
+     *
+     * @var EventDispatcher
+     */
+    private $eventDispatcher;
 
     /**
      *
@@ -32,7 +40,56 @@ class SituationProcessor
     {
         $this->context = $context;
         $this->log = $context->getLogRegistry()->getLog($this);
-        $this->dataStore = $context->getDataStore();
+    }
+
+    /**
+     *
+     * @return \BrugOpen\Db\Service\TableManager
+     */
+    public function getTableManager()
+    {
+        if ($this->tableManager == null) {
+
+            $connectionManager = $this->context->getDatabaseConnectionManager();
+            $connection = $connectionManager->getConnection();
+            $tableManager = new DatabaseTableManager($connection);
+
+            $this->tableManager = $tableManager;
+        }
+
+        return $this->tableManager;
+    }
+
+    /**
+     *
+     * @param TableManager $tableManager
+     */
+    public function setTableManager($tableManager)
+    {
+        $this->tableManager = $tableManager;
+    }
+
+    /**
+     *
+     * @return \BrugOpen\Core\EventDispatcher
+     */
+    public function getEventDispatcher()
+    {
+        if ($this->eventDispatcher == null) {
+
+            $this->eventDispatcher = $this->context->getEventDispatcher();
+        }
+
+        return $this->eventDispatcher;
+    }
+
+    /**
+     *
+     * @param EventDispatcher $eventDispatcher
+     */
+    public function setEventDispatcher($eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -48,7 +105,9 @@ class SituationProcessor
         $keys['id'] = $situationId;
         $keys['version'] = $situation->getVersion();
 
-        $existingSituation = $this->dataStore->findRecord('bo_situation', $keys);
+        $tableManager = $this->getTableManager();
+
+        $existingSituation = $tableManager->findRecord('bo_situation', $keys);
 
         $probability = null;
         $datetimeStart = null;
@@ -169,7 +228,7 @@ class SituationProcessor
                     $values['status'] = $status;
                 }
 
-                $res = $this->dataStore->updateTable('bo_situation', $keys, $values);
+                $res = $tableManager->updateTable('bo_situation', $keys, $values);
 
                 if ($res) {
 
@@ -246,7 +305,7 @@ class SituationProcessor
                 $notifyListeners = true;
             }
 
-            $res = $this->dataStore->insertRecord('bo_situation', $values);
+            $res = $tableManager->insertRecord('bo_situation', $values);
 
             if (! $res) {
 
@@ -258,16 +317,20 @@ class SituationProcessor
 
         if ($notifyListeners) {
 
-            $this->context->getEventDispatcher()->postEvent('Ndw.Situation.update', $situationId);
+            $eventDispatcher = $this->getEventDispatcher();
+
+            $eventDispatcher->postEvent('Ndw.Situation.update', $situationId);
         }
     }
 
-    public function checkUnfinishedOperations($publicationDateTime)
+    public function checkUnfinishedGoneOperations($publicationDateTime)
     {
+        $tableManager = $this->getTableManager();
+
         // loop through all unfinished operations
         $keys = array();
         $keys['finished'] = 0;
-        $unfinishedOperations = $this->dataStore->findRecords('bo_operation', $keys);
+        $unfinishedOperations = $tableManager->findRecords('bo_operation', $keys);
 
         foreach ($unfinishedOperations as $activeOperation) {}
     }
