@@ -10,7 +10,7 @@ class SituationProcessorTest extends TestCase
     public function testProcessSingleNewSituation()
     {
         $tableManager = new MemoryTableManager();
-        $eventDispatcher = new EventDispatcher(null);
+        $eventDispatcher = new EventDispatcher();
         $situationProcessor = new SituationProcessor(null);
         $situationProcessor->setTableManager($tableManager);
         $situationProcessor->setEventDispatcher($eventDispatcher);

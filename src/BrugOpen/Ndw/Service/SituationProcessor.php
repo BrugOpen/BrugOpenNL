@@ -39,7 +39,6 @@ class SituationProcessor
     public function __construct($context)
     {
         $this->context = $context;
-        $this->log = $context->getLogRegistry()->getLog($this);
     }
 
     /**
@@ -94,6 +93,21 @@ class SituationProcessor
 
     /**
      *
+     * @return \Psr\Log\LoggerInterface
+     */
+    public function getLog()
+    {
+        if ($this->log == null) {
+
+            $context = $this->context;
+            $this->log = $context->getLogRegistry()->getLog($this);
+        }
+
+        return $this->log;
+    }
+
+    /**
+     *
      * @param \BrugOpen\Datex\Model\Situation $situation
      * @param \Datetime $publicationTime
      */
@@ -106,6 +120,7 @@ class SituationProcessor
         $keys['version'] = $situation->getVersion();
 
         $tableManager = $this->getTableManager();
+        $log = $this->getLog();
 
         $existingSituation = $tableManager->findRecord('bo_situation', $keys);
 
@@ -235,7 +250,7 @@ class SituationProcessor
                     $notifyListeners = true;
                 } else {
 
-                    $this->log->error('Could not update situation ' . $situationId . ' version ' . $values['version']);
+                    $log->error('Could not update situation ' . $situationId . ' version ' . $values['version']);
                 }
             }
         } else {
@@ -309,7 +324,7 @@ class SituationProcessor
 
             if (! $res) {
 
-                $this->log->error('Could not insert situation ' . $situationId . ' version ' . $values['version']);
+                $log->error('Could not insert situation ' . $situationId . ' version ' . $values['version']);
 
                 $notifyListeners = false;
             }
