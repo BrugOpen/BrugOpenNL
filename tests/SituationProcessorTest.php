@@ -59,17 +59,17 @@ class SituationProcessorTest extends TestCase
         $this->assertEquals('53.2276455', $record['lat']);
         $this->assertEquals('6.5917772', $record['lng']);
         $this->assertEquals(1652369466, $record['datetime_start']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['time_start']);
+        $this->assertEquals(1652369466, $record['time_start']->getTimestamp());
         $this->assertArrayNotHasKey('datetime_end', $record);
         $this->assertArrayNotHasKey('time_end', $record);
         $this->assertEquals('implemented', $record['status']);
         $this->assertEquals('certain', $record['probability']);
         $this->assertEquals('1652369466', $record['datetime_version']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['version_time']);
+        $this->assertEquals(1652369466, $record['version_time']->getTimestamp());
         $this->assertEquals('1652369467', $record['first_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:07'), $record['first_publication_time']);
+        $this->assertEquals(1652369467, $record['first_publication_time']->getTimestamp());
         $this->assertEquals('1652369467', $record['last_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:07'), $record['last_publication_time']);
+        $this->assertEquals(1652369467, $record['last_publication_time']->getTimestamp());
 
         // assert situation event dispatched
 
@@ -136,17 +136,17 @@ class SituationProcessorTest extends TestCase
         $this->assertEquals('53.2276455', $record['lat']);
         $this->assertEquals('6.5917772', $record['lng']);
         $this->assertEquals(1652369466, $record['datetime_start']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['time_start']);
+        $this->assertEquals(1652369466, $record['time_start']->getTimestamp());
         $this->assertArrayNotHasKey('datetime_end', $record);
         $this->assertArrayNotHasKey('time_end', $record);
         $this->assertEquals('implemented', $record['status']);
         $this->assertEquals('certain', $record['probability']);
         $this->assertEquals('1652369466', $record['datetime_version']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['version_time']);
+        $this->assertEquals(1652369466, $record['version_time']->getTimestamp());
         $this->assertEquals('1652369467', $record['first_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:07'), $record['first_publication_time']);
+        $this->assertEquals(1652369467, $record['first_publication_time']->getTimestamp());
         $this->assertEquals('1652369467', $record['last_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:07'), $record['last_publication_time']);
+        $this->assertEquals(1652369467, $record['last_publication_time']->getTimestamp());
 
         // assert situation event dispatched
 
@@ -202,17 +202,17 @@ class SituationProcessorTest extends TestCase
         $this->assertEquals('53.2276455', $record['lat']);
         $this->assertEquals('6.5917772', $record['lng']);
         $this->assertEquals(1652369466, $record['datetime_start']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['time_start']);
+        $this->assertEquals(1652369466, $record['time_start']->getTimestamp());
         $this->assertArrayNotHasKey('datetime_end', $record);
         $this->assertArrayNotHasKey('time_end', $record);
         $this->assertEquals('implemented', $record['status']);
         $this->assertEquals('certain', $record['probability']);
         $this->assertEquals('1652369466', $record['datetime_version']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['version_time']);
+        $this->assertEquals(1652369466, $record['version_time']->getTimestamp());
         $this->assertEquals('1652369467', $record['first_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:07'), $record['first_publication_time']);
+        $this->assertEquals(1652369467, $record['first_publication_time']->getTimestamp());
         $this->assertEquals('1652369467', $record['last_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:07'), $record['last_publication_time']);
+        $this->assertEquals(1652369467, $record['last_publication_time']->getTimestamp());
 
         $record = $records[1];
         $this->assertEquals('NDW04_NLGRQ000600502900272_53325436', $record['id']);
@@ -221,17 +221,17 @@ class SituationProcessorTest extends TestCase
         $this->assertEquals('53.2276455', $record['lat']);
         $this->assertEquals('6.5917772', $record['lng']);
         $this->assertEquals(1652369466, $record['datetime_start']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:31:06'), $record['time_start']);
+        $this->assertEquals(1652369466, $record['time_start']->getTimestamp());
         $this->assertEquals('1652370126', $record['datetime_end']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:42:06'), $record['time_end']);
+        $this->assertEquals(1652370126, $record['time_end']->getTimestamp());
         $this->assertEquals('beingTerminated', $record['status']);
         $this->assertEquals('certain', $record['probability']);
         $this->assertEquals('1652370126', $record['datetime_version']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:42:06'), $record['version_time']);
+        $this->assertEquals(1652370126, $record['version_time']->getTimestamp());
         $this->assertEquals('1652370126', $record['first_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:42:06'), $record['first_publication_time']);
+        $this->assertEquals(1652370126, $record['first_publication_time']->getTimestamp());
         $this->assertEquals('1652370126', $record['last_publication']);
-        $this->assertEquals(new \DateTime('2022-05-12 17:42:06'), $record['last_publication_time']);
+        $this->assertEquals(1652370126, $record['last_publication_time']->getTimestamp());
 
         // assert second event posted
 
