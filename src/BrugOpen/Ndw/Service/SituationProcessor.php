@@ -108,6 +108,15 @@ class SituationProcessor
 
     /**
      *
+     * @param \Psr\Log\LoggerInterface $log
+     */
+    public function setLog($log)
+    {
+        $this->log = $log;
+    }
+
+    /**
+     *
      * @param \BrugOpen\Datex\Model\Situation $situation
      * @param \Datetime $publicationTime
      */
@@ -314,6 +323,9 @@ class SituationProcessor
 
                     // ignore immediately
                     $values['operation_id'] = 0;
+                } else {
+
+                    $notifyListeners = true;
                 }
             } else {
 
@@ -334,19 +346,9 @@ class SituationProcessor
 
             $eventDispatcher = $this->getEventDispatcher();
 
-            $eventDispatcher->postEvent('Ndw.Situation.update', $situationId);
+            $eventDispatcher->postEvent('Ndw.Situation.update', array(
+                $situationId
+            ));
         }
-    }
-
-    public function checkUnfinishedGoneOperations($publicationDateTime)
-    {
-        $tableManager = $this->getTableManager();
-
-        // loop through all unfinished operations
-        $keys = array();
-        $keys['finished'] = 0;
-        $unfinishedOperations = $tableManager->findRecords('bo_operation', $keys);
-
-        foreach ($unfinishedOperations as $activeOperation) {}
     }
 }
