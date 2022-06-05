@@ -105,6 +105,9 @@ class MemoryTableManager implements TableManager
                 $this->autoIncrementByTable[$table][1] ++;
                 $res = $nextId;
             }
+        } else {
+
+            $res = true;
         }
 
         $this->recordsByTable[$table][] = $record;

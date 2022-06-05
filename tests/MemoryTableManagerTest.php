@@ -68,7 +68,9 @@ class MemoryTableManagerTest extends TestCase
         $record['title'] = 'foo';
 
         // insert without auto increment
-        $tableManager->insertRecord('mytable', $record);
+        $res = $tableManager->insertRecord('mytable', $record);
+
+        $this->assertTrue($res);
 
         $records = $tableManager->findRecords('mytable');
 

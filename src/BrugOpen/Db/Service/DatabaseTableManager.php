@@ -335,7 +335,15 @@ class DatabaseTableManager implements TableManager
 
             if ($stmt->execute()) {
 
-                $res = $this->connection->lastInsertId();
+                $lastInsertId = $this->connection->lastInsertId();
+
+                if ($lastInsertId) {
+
+                    $res = $lastInsertId;
+                } else {
+
+                    $res = true;
+                }
             }
         }
 
