@@ -344,6 +344,9 @@ class DatabaseTableManager implements TableManager
 
                     $res = true;
                 }
+            } else {
+
+                $res = false;
             }
         }
 
