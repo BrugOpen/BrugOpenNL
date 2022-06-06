@@ -110,7 +110,7 @@ class DatabaseTableManager implements TableManager
      * {@inheritdoc}
      * @see \BrugOpen\Db\Service\TableManager::updateRecords()
      */
-    public function updateRecords($table, $values, $criteria)
+    public function updateRecords($table, $values, $criteria = null)
     {
         $res = null;
 
