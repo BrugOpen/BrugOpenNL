@@ -358,4 +358,103 @@ class MemoryTableManagerTest extends TestCase
         $this->assertCount(1, $records);
         $this->assertEquals(3, $records[0]['id']);
     }
+
+    public function testCountRecordsWholeTable()
+    {
+        $tableManager = new MemoryTableManager();
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(0, $numRecords);
+
+        // insert one record
+        $record = array();
+        $record['id'] = 1;
+        $record['title'] = 'foo';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        // now find all records again
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(1, $numRecords);
+
+        // now insert another record
+        $record = array();
+        $record['id'] = 2;
+        $record['title'] = 'bar';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        // now find all records again
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(2, $numRecords);
+    }
+
+    public function testCountRecordsWithCriteria()
+    {
+        $tableManager = new MemoryTableManager();
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(0, $numRecords);
+
+        $record = array();
+        $record['id'] = 1;
+        $record['type_id'] = 1;
+        $record['title'] = 'foo1';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $record = array();
+        $record['id'] = 2;
+        $record['type_id'] = 1;
+        $record['title'] = 'foo2';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $record = array();
+        $record['id'] = 3;
+        $record['type_id'] = 2;
+        $record['title'] = 'bar2';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        // find all records
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(3, $numRecords);
+
+        // find by id
+        $criteria = array();
+        $criteria['id'] = 2;
+
+        $numRecords = $tableManager->countRecords('mytable', $criteria);
+
+        $this->assertEquals(1, $numRecords);
+
+        // find by array of ids
+
+        $criteria = array();
+        $criteria['id'] = array();
+        $criteria['id'][] = 1;
+        $criteria['id'][] = 3;
+
+        $numRecords = $tableManager->countRecords('mytable', $criteria);
+
+        $this->assertEquals(2, $numRecords);
+
+        // find by type id
+
+        $criteria = array();
+        $criteria['type_id'] = 1;
+
+        $numRecords = $tableManager->countRecords('mytable', $criteria);
+
+        $this->assertEquals(2, $numRecords);
+    }
 }

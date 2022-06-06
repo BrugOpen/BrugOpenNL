@@ -140,7 +140,11 @@ class MemoryTableManager implements TableManager
      * @see \BrugOpen\Db\Service\RecordFinder::countRecords()
      */
     public function countRecords($table, $criteria = null)
-    {}
+    {
+        $records = $this->findRecords($table, $criteria);
+        $numRecords = count($records);
+        return $numRecords;
+    }
 
     /**
      *
