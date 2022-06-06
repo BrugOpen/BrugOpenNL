@@ -154,11 +154,18 @@ class MemoryTableManagerTest extends TestCase
 
         $tableManager->insertRecord('mytable', $record);
 
+        $record = array();
+        $record['id'] = 5;
+        $record['type_id'] = 0;
+        $record['title'] = 'zero1';
+
+        $tableManager->insertRecord('mytable', $record);
+
         // find all records
 
         $records = $tableManager->findRecords('mytable');
 
-        $this->assertCount(4, $records);
+        $this->assertCount(5, $records);
 
         // find by id
         $criteria = array();

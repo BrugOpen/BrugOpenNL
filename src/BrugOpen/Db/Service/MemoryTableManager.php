@@ -181,14 +181,25 @@ class MemoryTableManager implements TableManager
                                 }
                             } else {
 
-                                if (! ($record[$criteriumName] == $criteriumValue)) {
+                                if ($criteriumValue === null) {
+
+                                    if ($record[$criteriumName] !== null) {
+
+                                        $itemMatches = false;
+                                        break;
+                                    }
+                                } else if (! ($record[$criteriumName] == $criteriumValue)) {
 
                                     $itemMatches = false;
                                     break;
                                 }
                             }
                         } else {
-                            $itemMatches = false;
+
+                            if ($criteriumValue !== null) {
+
+                                $itemMatches = false;
+                            }
                         }
                     }
                 }
