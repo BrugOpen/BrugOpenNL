@@ -336,4 +336,57 @@ class SituationProcessorTest extends TestCase
             }
         }
     }
+
+    public function testFindSituationIdsWithoutOperationId()
+    {
+        $tableManager = new MemoryTableManager();
+        $situationProcessor = new SituationProcessor(null);
+        $situationProcessor->setTableManager($tableManager);
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertEmpty($situationsWithoutOperationId);
+
+        $record = array();
+        $record['situation_id'] = 'foo1';
+        $record['operation_id'] = 0;
+
+        $tableManager->insertRecord('bo_situation', $record);
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertEmpty($situationsWithoutOperationId);
+
+        $record['situation_id'] = 'foo2';
+        $record['operation_id'] = 1;
+
+        $tableManager->insertRecord('bo_situation', $record);
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertEmpty($situationsWithoutOperationId);
+
+        $record['situation_id'] = 'foo3';
+        $record['operation_id'] = null;
+
+        $tableManager->insertRecord('bo_situation', $record);
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertNotEmpty($situationsWithoutOperationId);
+        $this->assertCount(1, $situationsWithoutOperationId);
+        $this->assertTrue(in_array('foo3', $situationsWithoutOperationId));
+
+        $record['situation_id'] = 'foo4';
+        $record['operation_id'] = null;
+
+        $tableManager->insertRecord('bo_situation', $record);
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertNotEmpty($situationsWithoutOperationId);
+        $this->assertCount(2, $situationsWithoutOperationId);
+        $this->assertTrue(in_array('foo3', $situationsWithoutOperationId));
+        $this->assertTrue(in_array('foo4', $situationsWithoutOperationId));
+    }
 }

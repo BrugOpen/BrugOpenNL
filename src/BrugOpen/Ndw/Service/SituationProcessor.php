@@ -351,4 +351,53 @@ class SituationProcessor
             ));
         }
     }
+
+    public function checkUnfinishedGoneOperations($publicationDateTime)
+    {
+        // $tableManager = $this->getTableManager();
+
+        // loop through all unfinished operations
+        // $keys = array();
+        // $keys['finished'] = 0;
+        // $unfinishedOperations = $tableManager->findRecords('bo_operation', $keys);
+
+        // foreach ($unfinishedOperations as $activeOperation) {}
+    }
+
+    /**
+     *
+     * @return void
+     */
+    public function markUncertainSituationsIgnored()
+    {}
+
+    public function findSituationIdsWithoutOperationId()
+    {
+
+        // collect distinct situation ids with any missing operation_id
+        $situationIds = array();
+
+        $tableManager = $this->getTableManager();
+
+        $criteria = array();
+        $criteria['operation_id'] = null;
+
+        $fields = array();
+        $fields[] = 'situation_id';
+
+        $records = $tableManager->findRecords('bo_situation', $criteria, $fields);
+
+        if ($records) {
+
+            foreach ($records as $record) {
+
+                $situationId = $record['situation_id'];
+                $situationIds[$situationId] = $situationId;
+            }
+
+            $situationIds = array_values($situationIds);
+        }
+
+        return $situationIds;
+    }
 }
