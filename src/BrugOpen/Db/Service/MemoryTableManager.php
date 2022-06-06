@@ -66,8 +66,62 @@ class MemoryTableManager implements TableManager
      * {@inheritdoc}
      * @see \BrugOpen\Db\Service\TableManager::updateRecords()
      */
-    public function updateRecords($table, $values, $criteria)
-    {}
+    public function updateRecords($table, $values, $criteria = null)
+    {
+        if (array_key_exists($table, $this->recordsByTable)) {
+
+            foreach ($this->recordsByTable[$table] as $i => $record) {
+
+                $itemMatches = true;
+
+                if (is_array($criteria) && (sizeof($criteria) > 0)) {
+
+                    foreach ($criteria as $criteriumName => $criteriumValue) {
+
+                        if (array_key_exists($criteriumName, $record)) {
+
+                            if (is_array($criteriumValue)) {
+
+                                if (! in_array($record[$criteriumName], $criteriumValue)) {
+
+                                    $itemMatches = false;
+                                    break;
+                                }
+                            } else {
+
+                                if ($criteriumValue === null) {
+
+                                    if ($record[$criteriumName] !== null) {
+
+                                        $itemMatches = false;
+                                        break;
+                                    }
+                                } else if (! ($record[$criteriumName] == $criteriumValue)) {
+
+                                    $itemMatches = false;
+                                    break;
+                                }
+                            }
+                        } else {
+
+                            if ($criteriumValue !== null) {
+
+                                $itemMatches = false;
+                            }
+                        }
+                    }
+                }
+
+                if ($itemMatches) {
+
+                    foreach ($values as $key => $value) {
+
+                        $this->recordsByTable[$table][$i][$key] = $value;
+                    }
+                }
+            }
+        }
+    }
 
     /**
      *

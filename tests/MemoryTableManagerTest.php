@@ -481,4 +481,124 @@ class MemoryTableManagerTest extends TestCase
 
         $this->assertEquals(2, $numRecords);
     }
+
+    public function testUpdateRecordsAllRecordsInTable()
+    {
+        $tableManager = new MemoryTableManager();
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(0, $numRecords);
+
+        $record = array();
+        $record['id'] = 1;
+        $record['type_id'] = 1;
+        $record['title'] = 'foo1';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $record = array();
+        $record['id'] = 2;
+        $record['type_id'] = 1;
+        $record['title'] = 'foo2';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $record = array();
+        $record['id'] = 3;
+        $record['type_id'] = 2;
+        $record['title'] = 'bar2';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $values = array();
+        $values['type_id'] = '3';
+
+        // assert no records have type_id = 3
+
+        $records = $tableManager->findRecords('mytable');
+
+        foreach ($records as $record) {
+
+            $this->assertNotEquals(3, $record['type_id']);
+        }
+
+        // now update all records
+
+        $tableManager->updateRecords('mytable', $values);
+
+        // now assert all records have type_id = 3
+
+        $records = $tableManager->findRecords('mytable');
+
+        foreach ($records as $record) {
+
+            $this->assertEquals(3, $record['type_id']);
+        }
+    }
+
+    public function testUpdateRecordsWithCriteria()
+    {
+        $tableManager = new MemoryTableManager();
+
+        $numRecords = $tableManager->countRecords('mytable');
+
+        $this->assertEquals(0, $numRecords);
+
+        $record = array();
+        $record['id'] = 1;
+        $record['type_id'] = 1;
+        $record['title'] = 'foo1';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $record = array();
+        $record['id'] = 2;
+        $record['type_id'] = 1;
+        $record['title'] = 'foo2';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $record = array();
+        $record['id'] = 3;
+        $record['type_id'] = 2;
+        $record['title'] = 'bar2';
+
+        $tableManager->insertRecord('mytable', $record);
+
+        $values = array();
+        $values['type_id'] = '3';
+
+        // assert no records have type_id = 3
+
+        $records = $tableManager->findRecords('mytable');
+
+        foreach ($records as $record) {
+
+            $this->assertNotEquals(3, $record['type_id']);
+        }
+
+        // now update records with type_id = 1
+        $criteria = array();
+        $criteria['type_id'] = 1;
+        $tableManager->updateRecords('mytable', $values, $criteria);
+
+        // now assert only records 1 and 2 have type_id = 3
+
+        $criteria = array();
+        $criteria['id'][] = 1;
+        $criteria['id'][] = 2;
+        $records = $tableManager->findRecords('mytable', $criteria);
+
+        foreach ($records as $record) {
+
+            $this->assertEquals(3, $record['type_id']);
+        }
+
+        $criteria = array();
+        $criteria['id'] = 3;
+
+        $record = $tableManager->findRecord('mytable', $criteria);
+        $this->assertEquals(2, $record['type_id']);
+    }
 }

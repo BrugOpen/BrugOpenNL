@@ -1,5 +1,4 @@
 <?php
-
 namespace BrugOpen\Db\Service;
 
 interface TableManager extends RecordFinder
@@ -25,7 +24,7 @@ interface TableManager extends RecordFinder
      * @param mixed[] $values
      * @param mixed[] $criteria
      */
-    public function updateRecords($table, $values, $criteria);
+    public function updateRecords($table, $values, $criteria = null);
 
     /**
      *
@@ -33,5 +32,4 @@ interface TableManager extends RecordFinder
      * @param mixed[] $criteria
      */
     public function deleteRecords($table, $criteria = null, $limit = null);
-
 }
