@@ -147,11 +147,18 @@ class MemoryTableManagerTest extends TestCase
 
         $tableManager->insertRecord('mytable', $record);
 
+        $record = array();
+        $record['id'] = 4;
+        $record['type_id'] = null;
+        $record['title'] = 'null1';
+
+        $tableManager->insertRecord('mytable', $record);
+
         // find all records
 
         $records = $tableManager->findRecords('mytable');
 
-        $this->assertCount(3, $records);
+        $this->assertCount(4, $records);
 
         // find by id
         $criteria = array();
@@ -185,6 +192,16 @@ class MemoryTableManagerTest extends TestCase
 
         $this->assertEquals(1, $records[0]['id']);
         $this->assertEquals(2, $records[1]['id']);
+
+        // find by NULL value
+
+        $criteria = array();
+        $criteria['type_id'] = null;
+        $records = $tableManager->findRecords('mytable', $criteria);
+
+        $this->assertCount(1, $records);
+
+        $this->assertEquals(4, $records[0]['id']);
     }
 
     public function testFindRecordsWithOrdering()
