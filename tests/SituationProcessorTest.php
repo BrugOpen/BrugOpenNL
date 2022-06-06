@@ -249,12 +249,91 @@ class SituationProcessorTest extends TestCase
     }
 
     public function testProcessSnapshot()
-    {}
-
-    public function testSingleRiskOfSituationfFirstVersion()
     {
+        $log = new \Monolog\Logger('SituationProcessor');
+        $log->pushHandler(new TestHandler());
 
-        // after processing, assert operation_id = 0
-        // assert no event dispatched
+        $tableManager = new MemoryTableManager();
+        $eventDispatcher = new TestEventDispatcher();
+        $situationProcessor = new SituationProcessor(null);
+        $situationProcessor->setTableManager($tableManager);
+        $situationProcessor->setEventDispatcher($eventDispatcher);
+        $situationProcessor->setLog($log);
+
+        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-snapshot.xml.gz';
+
+        $parser = new DatexFileParser();
+
+        $logicalModel = $parser->parseFile($testFile);
+
+        $this->assertNotNull($logicalModel);
+
+        $this->assertNotNull($logicalModel->getPayloadPublication());
+
+        $this->assertNotNull($logicalModel->getPayloadPublication()
+            ->getSituations());
+
+        $situations = $logicalModel->getPayloadPublication()->getSituations();
+
+        $this->assertCount(36, $situations);
+
+        $publicationTime = $logicalModel->getPayloadPublication()->getPublicationTime();
+
+        foreach ($situations as $situation) {
+
+            $situationProcessor->processSituation($situation, $publicationTime);
+        }
+
+        $records = $tableManager->findRecords('bo_situation');
+
+        $this->assertCount(36, $records);
+
+        // certain situations
+        $certainSituations = array();
+        $certainSituations[] = 'NDW04_NLNWG002260443400105_53143259';
+        $certainSituations[] = 'NDW04_NLLWR000270322300426_53152780';
+        $certainSituations[] = 'NDW04_NLGRQ000601013900364_53121689';
+        $certainSituations[] = 'NDW04_NLCPI0211D0518200003_53113614';
+
+        $record = $records[0];
+
+        $this->assertEquals('NDW04_NLGRU000605560900877_53022369', $record['id']);
+        $this->assertEquals(1, $record['version']);
+
+        // assert triggered events
+
+        $postedEvents = $eventDispatcher->getPostedEvents();
+
+        $this->assertCount(4, $postedEvents);
+
+        foreach ($certainSituations as $i => $situationId) {
+
+            $this->assertEquals($situationId, $postedEvents[$i]['params'][0]);
+        }
+
+        // assert uncertain situations have operation_id 0
+
+        foreach ($records as $record) {
+
+            $situationId = $record['id'];
+
+            if (! in_array($situationId, $certainSituations)) {
+
+                $this->assertArrayHasKey('operation_id', $record);
+                $this->assertEquals(0, $record['operation_id']);
+            }
+        }
+
+        // assert certain situations have no operation_id
+
+        foreach ($records as $record) {
+
+            $situationId = $record['id'];
+
+            if (in_array($situationId, $certainSituations)) {
+
+                $this->assertArrayNotHasKey('operation_id', $record);
+            }
+        }
     }
 }
