@@ -107,6 +107,7 @@ class MemoryTableManager implements TableManager
                             if ($criteriumValue !== null) {
 
                                 $itemMatches = false;
+                                break;
                             }
                         }
                     }
