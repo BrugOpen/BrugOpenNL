@@ -348,7 +348,7 @@ class SituationProcessorTest extends TestCase
         $this->assertEmpty($situationsWithoutOperationId);
 
         $record = array();
-        $record['situation_id'] = 'foo1';
+        $record['id'] = 'foo1';
         $record['operation_id'] = 0;
 
         $tableManager->insertRecord('bo_situation', $record);
@@ -357,7 +357,7 @@ class SituationProcessorTest extends TestCase
 
         $this->assertEmpty($situationsWithoutOperationId);
 
-        $record['situation_id'] = 'foo2';
+        $record['id'] = 'foo2';
         $record['operation_id'] = 1;
 
         $tableManager->insertRecord('bo_situation', $record);
@@ -366,7 +366,7 @@ class SituationProcessorTest extends TestCase
 
         $this->assertEmpty($situationsWithoutOperationId);
 
-        $record['situation_id'] = 'foo3';
+        $record['id'] = 'foo3';
         $record['operation_id'] = null;
 
         $tableManager->insertRecord('bo_situation', $record);
@@ -377,7 +377,7 @@ class SituationProcessorTest extends TestCase
         $this->assertCount(1, $situationsWithoutOperationId);
         $this->assertTrue(in_array('foo3', $situationsWithoutOperationId));
 
-        $record['situation_id'] = 'foo4';
+        $record['id'] = 'foo4';
         $record['operation_id'] = null;
 
         $tableManager->insertRecord('bo_situation', $record);
@@ -388,5 +388,126 @@ class SituationProcessorTest extends TestCase
         $this->assertCount(2, $situationsWithoutOperationId);
         $this->assertTrue(in_array('foo3', $situationsWithoutOperationId));
         $this->assertTrue(in_array('foo4', $situationsWithoutOperationId));
+    }
+
+    public function testMarkUncertainSituationsIgnored()
+    {
+        $log = new \Monolog\Logger('SituationProcessor');
+        $log->pushHandler(new TestHandler());
+
+        $tableManager = new MemoryTableManager();
+        $eventDispatcher = new TestEventDispatcher();
+        $situationProcessor = new SituationProcessor(null);
+        $situationProcessor->setTableManager($tableManager);
+        $situationProcessor->setEventDispatcher($eventDispatcher);
+        $situationProcessor->setLog($log);
+
+        $insertRecords = array();
+
+        $record = array();
+        $record['id'] = 'NDW04_NLALK002340558100405_53182296';
+        $record['version'] = 1;
+        $record['operation_id'] = null;
+        $record['probability'] = 'riskOf';
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'NDW04_NLALK002340558100405_53182296';
+        $record['version'] = 2;
+        $record['operation_id'] = null;
+        $record['probability'] = 'riskOf';
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'NDW04_NLALK002340558100405_53182296';
+        $record['version'] = 3;
+        $record['operation_id'] = null;
+        $record['probability'] = 'riskOf';
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'NDW04_NLALK002340558100405_53182296';
+        $record['version'] = 1;
+        $record['operation_id'] = null;
+        $record['probability'] = 'riskOf';
+
+        $insertRecords[] = $record;
+
+        // now a situation that went from riskOf to certain
+
+        $record = array();
+        $record['id'] = 'NDW04_NLALK002340558100405_53182297';
+        $record['version'] = 1;
+        $record['operation_id'] = null;
+        $record['probability'] = 'riskOf';
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'NDW04_NLALK002340558100405_53182297';
+        $record['version'] = 2;
+        $record['operation_id'] = 123;
+        $record['probability'] = 'certain';
+
+        $insertRecords[] = $record;
+
+        $tableManager->insertRecords('bo_situation', $insertRecords);
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertCount(2, $situationsWithoutOperationId);
+        $this->assertEquals('NDW04_NLALK002340558100405_53182296', $situationsWithoutOperationId[0]);
+        $this->assertEquals('NDW04_NLALK002340558100405_53182297', $situationsWithoutOperationId[1]);
+
+        // find records, assert operation id null
+        $criteria = array();
+        $criteria['id'] = 'NDW04_NLALK002340558100405_53182296';
+        $records = $tableManager->findRecords('bo_situation', $criteria);
+
+        $this->assertCount(4, $records);
+
+        foreach ($records as $record) {
+
+            $this->assertNull($record['operation_id']);
+        }
+
+        // now mark situations that have no certain version as ignored
+
+        $situationProcessor->markUncertainSituationsIgnored();
+
+        // find records, assert operation id 0
+
+        $criteria = array();
+        $criteria['id'] = 'NDW04_NLALK002340558100405_53182296';
+        $records = $tableManager->findRecords('bo_situation', $criteria);
+
+        $this->assertCount(4, $records);
+
+        foreach ($records as $record) {
+
+            $this->assertNotNull($record['operation_id']);
+            $this->assertEquals(0, $record['operation_id']);
+        }
+
+        $situationsWithoutOperationId = $situationProcessor->findSituationIdsWithoutOperationId();
+
+        $this->assertCount(0, $situationsWithoutOperationId);
+
+        // make sure all situation versions from actual operation are updated
+
+        $criteria = array();
+        $criteria['id'] = 'NDW04_NLALK002340558100405_53182297';
+        $records = $tableManager->findRecords('bo_situation', $criteria);
+
+        $this->assertCount(2, $records);
+
+        foreach ($records as $record) {
+
+            $this->assertNotNull($record['operation_id']);
+            $this->assertEquals(123, $record['operation_id']);
+        }
     }
 }
