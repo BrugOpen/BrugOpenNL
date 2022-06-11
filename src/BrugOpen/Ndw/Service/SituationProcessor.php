@@ -369,7 +369,89 @@ class SituationProcessor
      * @return void
      */
     public function markUncertainSituationsIgnored()
-    {}
+    {
+        $situationIdsWithoutOperationId = $this->findSituationIdsWithoutOperationId();
+
+        if ($situationIdsWithoutOperationId) {
+
+            $log = $this->getLog();
+
+            $tableManager = $this->getTableManager();
+
+            foreach ($situationIdsWithoutOperationId as $situationId) {
+
+                $criteria = array();
+                $criteria['id'] = $situationId;
+
+                $situations = $tableManager->findRecords('bo_situation', $criteria);
+
+                $actualOperationId = null;
+                $anyCertainty = false;
+                $numRiskOf = 0;
+
+                foreach ($situations as $situation) {
+
+                    if (array_key_exists('operation_id', $situation) && ($situation['operation_id'] > 0)) {
+
+                        $actualOperationId = $situation['operation_id'];
+
+                        break;
+                    }
+
+                    if (isset($situation['probability'])) {
+                        if ($situation['probability'] == 'certain') {
+                            $anyCertainty = true;
+                        } else if ($situation['probability'] == 'probable') {
+                            $anyCertainty = true;
+                        } else if ($situation['probability'] == 'riskOf') {
+                            $numRiskOf ++;
+                        }
+                    }
+                }
+
+                $updateOperationId = null;
+
+                if ($actualOperationId > 0) {
+
+                    // copy this to all situations without operation
+
+                    $updateOperationId = $actualOperationId;
+                } else {
+
+                    if (! $anyCertainty) {
+
+                        if ($numRiskOf == sizeof($situations)) {
+
+                            // all situations are 'riskOf'
+                            $updateOperationId = 0;
+                        }
+                    }
+                }
+
+                if ($updateOperationId !== null) {
+
+                    $log->debug('Updating situations with id ' . $situationId . ' to operation ' . $updateOperationId);
+
+                    foreach ($situations as $situation) {
+
+                        if (! array_key_exists('operation_id', $situation) || ($situation['operation_id'] == '')) {
+
+                            $keys = array();
+                            $keys['id'] = $situation['id'];
+                            $keys['version'] = $situation['version'];
+
+                            $values = array();
+                            $values['operation_id'] = $updateOperationId;
+
+                            $log->debug('Updating situation ' . $situationId . ' version ' . $situation['version'] . ' to operation ' . $updateOperationId);
+
+                            $tableManager->updateRecords('bo_situation', $values, $keys);
+                        }
+                    }
+                }
+            }
+        }
+    }
 
     public function findSituationIdsWithoutOperationId()
     {
@@ -383,7 +465,7 @@ class SituationProcessor
         $criteria['operation_id'] = null;
 
         $fields = array();
-        $fields[] = 'situation_id';
+        $fields[] = 'id';
 
         $records = $tableManager->findRecords('bo_situation', $criteria, $fields);
 
@@ -391,7 +473,7 @@ class SituationProcessor
 
             foreach ($records as $record) {
 
-                $situationId = $record['situation_id'];
+                $situationId = $record['id'];
                 $situationIds[$situationId] = $situationId;
             }
 
