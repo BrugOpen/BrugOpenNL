@@ -3,6 +3,7 @@ namespace BrugOpen\Ndw\Service;
 
 use BrugOpen\Core\Context;
 use BrugOpen\Datex\Service\DatexFileParser;
+use Psr\Log\LoggerInterface;
 
 class NdwQueueProcessor
 {
@@ -21,12 +22,36 @@ class NdwQueueProcessor
 
     /**
      *
+     * @var SituationProcessor
+     */
+    private $situationProcessor;
+
+    /**
+     *
      * @param Context $context
      */
     public function __construct($context)
     {
         $this->context = $context;
-        $this->log = $context->getLogRegistry()->getLog($this);
+    }
+
+    public function getLog()
+    {
+        if ($this->log == null) {
+
+            $this->log = $this->context->getLogRegistry()->getLog($this);
+        }
+
+        return $this->log;
+    }
+
+    /**
+     *
+     * @param LoggerInterface $log
+     */
+    public function setLog($log)
+    {
+        $this->log = $log;
     }
 
     /**
@@ -35,8 +60,22 @@ class NdwQueueProcessor
      */
     public function getSituationProcessor()
     {
-        $situationProcessor = new SituationProcessor($this->context);
-        return $situationProcessor;
+        if ($this->situationProcessor == null) {
+
+            $situationProcessor = new SituationProcessor($this->context);
+            $this->situationProcessor = $situationProcessor;
+        }
+
+        return $this->situationProcessor;
+    }
+
+    /**
+     *
+     * @param SituationProcessor $situationProcessor
+     */
+    public function setSituationProcessor($situationProcessor)
+    {
+        $this->situationProcessor = $situationProcessor;
     }
 
     public function processQueue()
@@ -52,88 +91,120 @@ class NdwQueueProcessor
 
         $this->log->info('Processing NDW queue');
 
-        $situationProcessor = $this->getSituationProcessor();
+        $files = $this->getQueueFiles($queueDir);
 
-        if ($handle = opendir($queueDir)) {
+        if (sizeof($files) > 0) {
 
-            $files = array();
+            $this->processQueueFiles($files);
+        }
+    }
 
-            while (false !== ($entry = readdir($handle))) {
-                if ($entry == "." && $entry == "..") {
-                    continue;
-                }
+    public function processQueueFiles($queueFiles)
+    {
+        if (sizeof($queueFiles) > 0) {
 
-                $filename = $queueDir . $entry;
+            $this->log->info('Processing ' . sizeof($queueFiles) . ' NDW files');
 
-                if (is_file($filename)) {
+            $situationProcessor = $this->getSituationProcessor();
 
-                    $files[] = $entry;
+            $fileParser = new DatexFileParser();
+
+            foreach ($queueFiles as $queueFile) {
+
+                $file = basename($queueFile);
+
+                $this->log->info('Processing ' . $file);
+
+                $fileData = $fileParser->parseFile($queueFile);
+
+                if ($fileData) {
+
+                    /**
+                     *
+                     * @var \DateTime $publicationTime
+                     */
+                    $publicationTime = null;
+
+                    if ($fileData->getPayloadPublication()) {
+
+                        $publicationTime = $fileData->getPayloadPublication()->getPublicationTime();
+
+                        $situations = $fileData->getPayloadPublication()->getSituations();
+
+                        if ($situations) {
+
+                            foreach ($situations as $situation) {
+
+                                $situationProcessor->processSituation($situation, $publicationTime);
+                            }
+                        }
+                    }
+
+                    $exchange = $fileData->getExchange();
+
+                    if ($exchange) {
+
+                        $subscription = $fileData->getExchange()->getSubscription();
+
+                        if ($subscription) {
+
+                            $updateMethod = $subscription->getUpdateMethod();
+
+                            if ($updateMethod == 'snapshot') {
+
+                                if ($publicationTime != null) {
+                                    $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
+                                }
+                            }
+                        }
+                    }
+                } else {
+
+                    $this->log->error('Could not parse ' . $file);
                 }
             }
 
-            closedir($handle);
+            $situationProcessor->markUncertainSituationsIgnored();
+        }
+    }
 
-            if (sizeof($files) > 0) {
+    /**
+     *
+     * @param string $queueDir
+     * @return string[]
+     */
+    public function getQueueFiles($queueDir)
+    {
+        $files = array();
 
-                sort($files);
+        if (is_dir($queueDir)) {
 
-                $this->log->info('Processing ' . sizeof($files) . ' NDW files');
+            if (substr($queueDir, - 1) != DIRECTORY_SEPARATOR) {
 
-                $fileParser = new DatexFileParser();
+                $queueDir .= DIRECTORY_SEPARATOR;
+            }
 
-                foreach ($files as $file) {
+            if ($handle = opendir($queueDir)) {
 
-                    $queueFile = $queueDir . $file;
+                while (false !== ($entry = readdir($handle))) {
+                    if ($entry == "." && $entry == "..") {
+                        continue;
+                    }
 
-                    $this->log->info('Processing ' . $file);
+                    $filename = $queueDir . $entry;
 
-                    $fileData = $fileParser->parseFile($queueFile);
+                    if (is_file($filename)) {
 
-                    if ($fileData) {
-
-                        /**
-                         *
-                         * @var \DateTime $publicationTime
-                         */
-                        $publicationTime = null;
-
-                        if ($fileData->getPayloadPublication()) {
-
-                            $publicationTime = $fileData->getPayloadPublication()->getPublicationTime();
-
-                            $situations = $fileData->getPayloadPublication()->getSituations();
-
-                            if ($situations) {
-
-                                foreach ($situations as $situation) {
-
-                                    $situationProcessor->processSituation($situation, $publicationTime);
-                                }
-                            }
-                        }
-
-                        if ($fileData->getExchange()) {
-
-                            if ($fileData->getExchange()->getSubscription()) {
-
-                                if ($fileData->getExchange()
-                                    ->getSubscription()
-                                    ->getUpdateMethod() == 'snapshot') {
-
-                                    if ($publicationTime != null) {
-                                        $situationProcessor->checkUnfinishedOperations($publicationTime);
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-
-                        $this->log->error('Could not parse ' . basename($file));
+                        $files[] = $queueDir . $entry;
                     }
                 }
 
-                $situationProcessor->markUncertainSituationsIgnored();
+                closedir($handle);
+
+                sort($files);
             }
         }
+
+        return $files;
     }
 }
