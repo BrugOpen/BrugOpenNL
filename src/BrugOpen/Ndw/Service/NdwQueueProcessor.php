@@ -78,6 +78,9 @@ class NdwQueueProcessor
         $this->situationProcessor = $situationProcessor;
     }
 
+    /**
+     * 
+     */
     public function processQueue()
     {
         $datadir = $this->context->getAppRoot() . 'data' . DIRECTORY_SEPARATOR;
@@ -99,6 +102,10 @@ class NdwQueueProcessor
         }
     }
 
+    /**
+     * 
+     * @param string[] $queueFiles
+     */
     public function processQueueFiles($queueFiles)
     {
         if (sizeof($queueFiles) > 0) {
@@ -107,65 +114,81 @@ class NdwQueueProcessor
 
             $situationProcessor = $this->getSituationProcessor();
 
-            $fileParser = new DatexFileParser();
-
             foreach ($queueFiles as $queueFile) {
 
-                $file = basename($queueFile);
+                $this->processQueueFile($queueFile);
 
-                $this->log->info('Processing ' . $file);
-
-                $fileData = $fileParser->parseFile($queueFile);
-
-                if ($fileData) {
-
-                    /**
-                     *
-                     * @var \DateTime $publicationTime
-                     */
-                    $publicationTime = null;
-
-                    if ($fileData->getPayloadPublication()) {
-
-                        $publicationTime = $fileData->getPayloadPublication()->getPublicationTime();
-
-                        $situations = $fileData->getPayloadPublication()->getSituations();
-
-                        if ($situations) {
-
-                            foreach ($situations as $situation) {
-
-                                $situationProcessor->processSituation($situation, $publicationTime);
-                            }
-                        }
-                    }
-
-                    $exchange = $fileData->getExchange();
-
-                    if ($exchange) {
-
-                        $subscription = $fileData->getExchange()->getSubscription();
-
-                        if ($subscription) {
-
-                            $updateMethod = $subscription->getUpdateMethod();
-
-                            if ($updateMethod == 'snapshot') {
-
-                                if ($publicationTime != null) {
-                                    $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
-                                }
-                            }
-                        }
-                    }
-                } else {
-
-                    $this->log->error('Could not parse ' . $file);
-                }
             }
 
             $situationProcessor->markUncertainSituationsIgnored();
         }
+    }
+
+    /**
+     * 
+     * @param string $queueFile
+     */
+    public function processQueueFile($queueFile)
+    {
+        $situationProcessor = $this->getSituationProcessor();
+
+        $fileParser = new DatexFileParser();
+
+        $file = basename($queueFile);
+
+        $this->log->info('Processing ' . $file);
+
+        $fileData = $fileParser->parseFile($queueFile);
+
+        if ($fileData) {
+
+            /**
+             *
+             * @var \DateTime $publicationTime
+             */
+            $publicationTime = null;
+
+            if ($fileData->getPayloadPublication()) {
+
+                $publicationTime = $fileData->getPayloadPublication()->getPublicationTime();
+
+                $situations = $fileData->getPayloadPublication()->getSituations();
+
+                if ($situations) {
+
+                    foreach ($situations as $situation) {
+
+                        $situationProcessor->processSituation($situation, $publicationTime);
+                    }
+                }
+            }
+
+            $exchange = $fileData->getExchange();
+
+            if ($exchange) {
+
+                $subscription = $fileData->getExchange()->getSubscription();
+
+                if ($subscription) {
+
+                    $updateMethod = $subscription->getUpdateMethod();
+
+                    if ($updateMethod == 'snapshot') {
+
+                        if ($publicationTime != null) {
+                            $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
+                        }
+                    }
+                }
+            }
+
+            // TODO check for deliveryBreak = true, then send reqisterRequest
+
+        } else {
+
+            $this->log->error('Could not parse ' . $file);
+        }
+
     }
 
     /**
