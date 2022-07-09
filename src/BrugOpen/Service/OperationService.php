@@ -125,8 +125,76 @@ class OperationService
      * all unfinished operations (started or not), grouped by bridgeId
      * @return Operation[][]
      */
-    public function getCurrentOperationsByBridgeId($time = null)
+    public function getCurrentOperationsByBridgeId()
     {
+
+        /**
+         * @var Operation[]
+         */
+        $currentOperationsById = array();
+        
+        $unfinishedOperations = $this->loadUnfinishedOperations();
+
+        if ($unfinishedOperations) {
+
+            foreach ($unfinishedOperations as $unfinishedOperation) {
+
+                $operationId = $unfinishedOperation->getId();
+
+                $currentOperationsById[$operationId] = $unfinishedOperation;
+
+            }
+
+        }
+
+        $lastStartedOperationIds = $this->loadLastStartedOperationIds();
+
+        if ($lastStartedOperationIds) {
+
+            $loadOperationIds = array();
+
+            foreach ($lastStartedOperationIds as $operationId) {
+
+                if (!array_key_exists($operationId, $currentOperationsById)) {
+
+                    $loadOperationIds[] = $operationId;
+
+                }
+
+            }
+
+            if ($loadOperationIds) {
+
+                $loadedOperations = $this->loadOperationsById($loadOperationIds);
+
+                if ($loadedOperations) {
+
+                    foreach ($loadedOperations as $loadedOperation) {
+
+                        $operationId = $loadedOperation->getId();
+        
+                        $currentOperationsById[$operationId] = $loadedOperation;
+        
+                    }
+        
+                }
+
+            }
+
+        }
+
+        $currentOperationsByBridgeId = array();
+
+        foreach ($currentOperationsById as $operation) {
+
+            $bridgeId = $operation->getBridgeId();
+            $operationId = $operation->getId();
+
+            $currentOperationsByBridgeId[$bridgeId][$operationId] = $operation;
+
+        }
+
+        return $currentOperationsByBridgeId;
 
     }
 
@@ -135,6 +203,18 @@ class OperationService
      */
     public function updateLastStartedOperation($bridgeId, $operationId)
     {
+
+        if ($bridgeId && $operationId) {
+
+            $values = array();
+            $values['last_started_operation_id'] = $operationId;
+
+            $criteria = array();
+            $criteria['id'] = $bridgeId;
+
+            $this->tableManager->updateRecords('bo_bridge', $values, $criteria);
+
+        }
 
     }
 
@@ -195,6 +275,40 @@ class OperationService
         }
 
         return $operations;
+
+    }
+
+    /**
+     * Loads bridgeId => lastStartedOperationId pairs
+     * @return int[]
+     */
+    public function loadLastStartedOperationIds()
+    {
+
+        $lastStartedOperationIds = array();
+
+        $fields = array('id', 'last_started_operation_id');
+
+        $records = $this->getTableManager()->findRecords('bo_bridge', null, $fields);
+
+        if ($records) {
+
+            foreach ($records as $record) {
+
+                $bridgeId = $record['id'];
+                $operationId = $record['last_started_operation_id'];
+
+                if ($operationId) {
+
+                    $lastStartedOperationIds[$bridgeId] = $operationId;
+
+                }
+
+            }
+            
+        }
+
+        return $lastStartedOperationIds;
 
     }
 
