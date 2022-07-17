@@ -4,6 +4,14 @@ namespace BrugOpen\Model;
 class Operation
 {
 
+    const CERTAINTY_UNLIKELY = 0;
+
+    const CERTAINTY_POSSIBLE = 1;
+
+    const CERTAINTY_PROBABLE = 2;
+
+    const CERTAINTY_CERTAIN = 3;
+
     /**
      *
      * @var int
