@@ -3,6 +3,8 @@
 namespace BrugOpen\Service;
 
 use BrugOpen\Core\Context;
+use BrugOpen\Db\Service\DatabaseTableManager;
+use BrugOpen\Db\Service\TableManager;
 
 class BridgeIndexService
 {
@@ -14,6 +16,11 @@ class BridgeIndexService
     private $context;
 
     /**
+     * @var TableManager
+     */
+    private $tableManager;
+
+    /**
      *
      * @param Context $context
      */
@@ -23,12 +30,65 @@ class BridgeIndexService
     }
 
     /**
+     * @return TableManager
+     */
+    public function getTableManager()
+    {
+        if ($this->tableManager == null) {
+
+            if ($this->context != null) {
+
+                $connectionManager = $this->context->getDatabaseConnectionManager();
+                $connection = $connectionManager->getConnection();
+                $tableManager = new DatabaseTableManager($connection);
+ 
+                $this->tableManager = $tableManager;
+            }
+
+        }
+
+        return $this->tableManager;
+    }
+
+    /**
+     * @param TableManager $tableManager
+     */
+    public function setTableManager($tableManager)
+    {
+        $this->tableManager = $tableManager;
+    }
+
+    /**
      * @param string $isrs
      * @return int|null
      */
     public function getBridgeIdByIsrs($isrs)
     {
 
+        $bridgeId = null;
+
+        if ($isrs) {
+
+            $tableManager = $this->getTableManager();
+
+            if ($tableManager) {
+
+                $criteria = array();
+                $criteria['isrs_code'] = $isrs;
+
+                $bridge = $tableManager->findRecord('bo_bridge_isrs', $criteria);
+
+                if ($bridge) {
+
+                    $bridgeId = $bridge['bridge_id'];
+
+                }
+        
+            }
+    
+        }
+
+        return $bridgeId;
     }
 
     /**
@@ -37,7 +97,31 @@ class BridgeIndexService
      */
     public function getBridgeIdByNdwLocationId($ndwLocationId)
     {
+        $bridgeId = null;
+
+        if ($ndwLocationId) {
+
+            $tableManager = $this->getTableManager();
+
+            if ($tableManager) {
+
+                $criteria = array();
+                $criteria['ndw_id'] = $ndwLocationId;
+
+                $bridge = $tableManager->findRecord('bo_bridge', $criteria);
+
+                if ($bridge) {
+
+                    $bridgeId = $bridge['id'];
+
+                }
         
+            }
+    
+        }
+
+        return $bridgeId;
+
     }
 
     /**
@@ -46,6 +130,22 @@ class BridgeIndexService
      */
     public function addBridgeIsrs($bridgeId, $isrs)
     {
+
+        if ($bridgeId && $isrs) {
+
+            $tableManager = $this->getTableManager();
+
+            if ($tableManager) {
+
+                $values = array();
+                $values['isrs_code'] = $isrs;
+                $values['bridge_id'] = $bridgeId;
+
+                $tableManager->insertRecord('bo_bridge_isrs', $values);
+
+            }
+
+        }
 
     }
 
