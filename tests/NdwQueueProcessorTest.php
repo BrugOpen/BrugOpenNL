@@ -28,6 +28,34 @@ class NdwQueueProcessorTest extends TestCase
 
     }
 
+    public function testProcessFileSingleSituation()
+    {
+        // process file with single situation
+
+        // assert situation processed
+
+        // assert situation event posted
+    }
+
+    public function testProcessFileSnapshot()
+    {
+        // process file with snapshot
+
+        // assert situations processed
+
+        // assert situation events posted
+
+        // assert snapshot event posted
+    }
+
+    public function testProcessKeepAliveDeliveryBreak()
+    {
+        // process file with KeepAlive + DeliveryBreak
+
+        // assert event posted
+
+    }
+
     public function ts() 
     {
 
