@@ -510,4 +510,187 @@ class SituationProcessorTest extends TestCase
             $this->assertEquals(123, $record['operation_id']);
         }
     }
+
+    public function testCheckUnfinishedGoneOperations()
+    {
+
+        $log = new \Monolog\Logger('SituationProcessor');
+        $testHandler = new TestHandler();
+        $log->pushHandler($testHandler);
+
+        $tableManager = new MemoryTableManager();
+        $eventDispatcher = new TestEventDispatcher();
+        $situationProcessor = new SituationProcessor(null);
+        $situationProcessor->setTableManager($tableManager);
+        $situationProcessor->setEventDispatcher($eventDispatcher);
+        $situationProcessor->setLog($log);
+
+        // create a few finished operations
+
+        $insertRecords = array();
+
+        $record = array();
+        $record['id'] = 123;
+        $record['bridge'] = 12;
+        $record['finished'] = 1;
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 124;
+        $record['bridge'] = 13;
+        $record['finished'] = 1;
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 125;
+        $record['bridge'] = 15;
+        $record['finished'] = 1;
+
+        $insertRecords[] = $record;
+
+        // create a few active (unfinished) operations
+
+        $record = array();
+        $record['id'] = 201;
+        $record['event_id'] = 'SITUATION_1201';
+        $record['bridge'] = 12;
+        $record['finished'] = 0;
+        $record['time_start'] = new \DateTime('2022-05-01 20:33:00');
+        $record['time_end'] = new \DateTime('2022-05-01 20:39:00');
+        // last published 2022-05-01 20:34:56
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 202;
+        $record['event_id'] = 'SITUATION_1202';
+        $record['bridge'] = 22;
+        $record['finished'] = 0;
+        // last published 2022-05-01 20:34:56
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 203;
+        $record['event_id'] = 'SITUATION_1203';
+        $record['bridge'] = 13;
+        $record['finished'] = 0;
+        // last published 2022-05-01 22:34:56
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 204;
+        $record['event_id'] = 'SITUATION_1204';
+        $record['bridge'] = 14;
+        $record['finished'] = 0;
+        // last published 2022-05-01 22:34:56
+
+        $insertRecords[] = $record;
+
+        $tableManager->insertRecords('bo_operation', $insertRecords);
+
+        // create corresponding situation records
+
+        $insertRecords = array();
+
+        $record = array();
+        $record['id'] = 'SITUATION_1201';
+        $record['version'] = 1;
+        $record['last_publication_time'] = new \DateTime('2022-05-01 20:24:34');
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'SITUATION_1201';
+        $record['version'] = 2;
+        $record['last_publication_time'] = new \DateTime('2022-05-01 20:34:56');
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'SITUATION_1202';
+        $record['version'] = 1;
+        $record['last_publication_time'] = new \DateTime('2022-05-01 20:34:56');
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'SITUATION_1203';
+        $record['version'] = 1;
+        $record['last_publication_time'] = new \DateTime('2022-05-01 22:34:56');
+
+        $insertRecords[] = $record;
+
+        $record = array();
+        $record['id'] = 'SITUATION_1204';
+        $record['version'] = 1;
+        $record['last_publication_time'] = new \DateTime('2022-05-01 22:34:56');
+
+        $insertRecords[] = $record;
+
+        $tableManager->insertRecords('bo_situation', $insertRecords);
+
+        // assert unfinished record count
+
+        $keys = array();
+        $keys['finished'] = 0;
+
+        $numUnfinishedOperations = $tableManager->countRecords('bo_operation', $keys);
+
+        $this->assertEquals(4, $numUnfinishedOperations);
+
+        // call checkUnfinishedGoneOperations()
+
+        $publicationTime = new \DateTime('2022-05-01 22:34:56');
+
+        $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
+
+        // assert operations are marked finished
+
+        $keys = array();
+        $keys['finished'] = 0;
+
+        $numUnfinishedOperations = $tableManager->countRecords('bo_operation', $keys);
+
+        $this->assertEquals(2, $numUnfinishedOperations);
+
+        // assert operations have datetime gone and datetime end values
+
+        $operation = $tableManager->findRecord('bo_operation', array('id' => 201));
+
+        $this->assertNotEmpty($operation);
+        $this->assertEquals(1, $operation['finished']);
+        $this->assertNotNull($operation['time_end']);
+        // time_end was already set
+        $this->assertEquals('2022-05-01 20:39:00', $operation['time_end']->format('Y-m-d H:i:s'));
+        $this->assertNotNull($operation['time_gone']);
+        $this->assertEquals('2022-05-01 22:34:56', $operation['time_gone']->format('Y-m-d H:i:s'));
+
+        $operation = $tableManager->findRecord('bo_operation', array('id' => 202));
+
+        $this->assertNotEmpty($operation);
+        $this->assertEquals(1, $operation['finished']);
+        $this->assertNotNull($operation['time_end']);
+        // time_end is taken from expire publication time
+        $this->assertEquals('2022-05-01 22:34:56', $operation['time_end']->format('Y-m-d H:i:s'));
+        $this->assertNotNull($operation['time_gone']);
+        $this->assertEquals('2022-05-01 22:34:56', $operation['time_gone']->format('Y-m-d H:i:s'));
+
+        // assert operation update events have been fired 
+        $postedEvents = $eventDispatcher->getPostedEvents();
+
+        $this->assertCount(2, $postedEvents);
+
+        $this->assertEquals('Operation.update', $postedEvents[0]['name']);
+        $this->assertCount(1, $postedEvents[0]['params']);
+        $this->assertEquals(201, $postedEvents[0]['params'][0]);
+
+        $this->assertEquals('Operation.update', $postedEvents[1]['name']);
+        $this->assertCount(1, $postedEvents[1]['params']);
+        $this->assertEquals(202, $postedEvents[1]['params'][0]);
+
+    }
 }

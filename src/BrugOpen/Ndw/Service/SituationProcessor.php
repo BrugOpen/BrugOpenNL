@@ -252,7 +252,7 @@ class SituationProcessor
                     $values['status'] = $status;
                 }
 
-                $res = $tableManager->updateTable('bo_situation', $keys, $values);
+                $res = $tableManager->updateRecords('bo_situation', $keys, $values);
 
                 if ($res) {
 
@@ -352,16 +352,106 @@ class SituationProcessor
         }
     }
 
+    /**
+     * @param \DateTime $publicationDateTime
+     */
     public function checkUnfinishedGoneOperations($publicationDateTime)
     {
-        // $tableManager = $this->getTableManager();
+        $tableManager = $this->getTableManager();
 
         // loop through all unfinished operations
-        // $keys = array();
-        // $keys['finished'] = 0;
-        // $unfinishedOperations = $tableManager->findRecords('bo_operation', $keys);
+        $keys = array();
+        $keys['finished'] = 0;
+        $unfinishedOperations = $tableManager->findRecords('bo_operation', $keys);
 
-        // foreach ($unfinishedOperations as $activeOperation) {}
+        foreach ($unfinishedOperations as $activeOperation) {
+
+            $operationId = $activeOperation['id'];
+
+            $situationId = $activeOperation['event_id'];
+
+            if ($situationId == '') {
+
+                continue;
+
+            }
+
+            $keys = array();
+            $keys['id'] = $situationId;
+
+            $situations = $tableManager->findRecords('bo_situation', $keys);
+
+            /**
+             * @var \DateTime
+             */
+            $lastPublicationDate = null;
+
+            foreach ($situations as $situation) {
+
+                if ($situation['last_publication_time']) {
+
+                    if (($lastPublicationDate == null) || ($situation['last_publication_time']->getTimestamp() > $lastPublicationDate->getTimestamp())) {
+
+                        $lastPublicationDate = $situation['last_publication_time'];
+
+                    }
+
+                }
+
+            }
+
+            if ($lastPublicationDate) {
+
+                if ($lastPublicationDate->getTimestamp() < $publicationDateTime->getTimestamp()) {
+
+                    // mark operation 'gone'
+
+                    $this->log->info('Marking operation ' . $operationId . ' gone');
+
+                    $updateValues = array();
+
+                    $updateValues['datetime_gone'] = $publicationDateTime->getTimestamp();
+                    $updateValues['time_gone'] = $publicationDateTime;
+                    $updateValues['finished'] = 1;
+
+                    $hasTimeEnd = false;
+
+                    if (array_key_exists('time_end', $activeOperation)) {
+
+                        if ($activeOperation['time_end']) {
+
+                            $hasTimeEnd = true;
+
+                        }
+
+                    }
+
+                    if (!$hasTimeEnd) {
+
+                        $updateValues['datetime_end'] = $publicationDateTime->getTimestamp();
+                        $updateValues['time_end'] = $publicationDateTime;
+
+                    }
+
+                    $keys = array();
+                    $keys['id'] = $operationId;
+
+                    $tableManager->updateRecords('bo_operation', $updateValues, $keys);
+
+                    $eventDispatcher = $this->getEventDispatcher();
+
+                    if ($eventDispatcher) {
+
+                        $eventDispatcher->postEvent('Operation.update', array($operationId));
+
+                    }
+
+                }
+
+            }
+
+        }
+
     }
 
     /**
