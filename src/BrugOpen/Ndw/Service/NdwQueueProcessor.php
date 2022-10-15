@@ -2,6 +2,7 @@
 namespace BrugOpen\Ndw\Service;
 
 use BrugOpen\Core\Context;
+use BrugOpen\Core\EventDispatcher;
 use BrugOpen\Datex\Service\DatexFileParser;
 use Psr\Log\LoggerInterface;
 
@@ -25,6 +26,11 @@ class NdwQueueProcessor
      * @var SituationProcessor
      */
     private $situationProcessor;
+
+    /**
+     * @var EventDispatcher
+     */
+    private $eventDispatcher;
 
     /**
      *
@@ -76,6 +82,33 @@ class NdwQueueProcessor
     public function setSituationProcessor($situationProcessor)
     {
         $this->situationProcessor = $situationProcessor;
+    }
+
+    /**
+     * @return EventDispatcher
+     */
+    public function getEventDispatcher()
+    {
+        if ($this->eventDispatcher == null) {
+
+            if ($this->context) {
+
+                $this->eventDispatcher = $this->context->getEventDispatcher();
+
+            }
+
+        }
+
+        return $this->eventDispatcher;
+
+    }
+
+    /**
+     * @param EventDispatcher $eventDispatcher
+     */
+    public function setEventDispatcher($eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -176,13 +209,32 @@ class NdwQueueProcessor
                     if ($updateMethod == 'snapshot') {
 
                         if ($publicationTime != null) {
+
+                            $this->log->debug('Checking unfunished gone operations for publication time ' . $publicationTime->format('Y-m-d H:i:s'));
+
                             $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
                         }
                     }
                 }
-            }
 
-            // TODO check for deliveryBreak = true, then send reqisterRequest
+                if ($exchange->getKeepAlive() == 'true') {
+
+                    if ($exchange->getDeliveryBreak() == 'true') {
+
+                        // dispatch deliveryBreak event
+                        $eventDispatcher = $this->getEventDispatcher();
+
+                        if ($eventDispatcher) {
+
+                            $eventDispatcher->postEvent('Ndw.DeliveryBreak');
+
+                        }
+
+                    }
+
+                }
+
+            }
 
         } else {
 
