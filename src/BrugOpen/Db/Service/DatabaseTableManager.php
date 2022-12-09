@@ -4,11 +4,32 @@ namespace BrugOpen\Db\Service;
 class DatabaseTableManager implements TableManager
 {
 
+    const COLUMN_INT = 1;
+
+    const COLUMN_STR = 2;
+
+    const COLUMN_DATE = 4;
+
+    const COLUMN_TIME = 8;
+
+    const COLUMN_BOOL = 16;
+
+    const COLUMN_BLOB = 64;
+
+    const COLUMN_NOTNULL = 128;
+
     /**
      *
      * @var \PDO
      */
     private $connection;
+
+    /**
+     * 
+     */
+    private $columnDefinitions = array();
+
+    private $dialect = 'mysql';
 
     /**
      *
@@ -28,19 +49,55 @@ class DatabaseTableManager implements TableManager
     {
         $records = null;
 
-        $selectPart = '*';
-
-        if ($fields) {
+        if (array_key_exists($table, $this->columnDefinitions)) {
 
             $fieldParts = array();
 
-            foreach ($fields as $field) {
+            foreach ($this->columnDefinitions[$table] as $column => $columnDefinition) {
 
-                // TODO add db-brand-specific quotes
-                $fieldParts[] = $field;
+                if ($fields) {
+
+                    if (!in_array($column, $fields)) {
+
+                        continue;
+
+                    }
+
+                }
+
+                if ($columnDefinition & self::COLUMN_DATE) {
+
+                    $fieldParts[] = 'UNIX_TIMESTAMP(' . $column . ')';
+
+                } else {
+
+                    // TODO add db-brand-specific quotes
+                    $fieldParts[] = $column;
+
+                }
+
             }
 
             $selectPart = implode(', ', $fieldParts);
+
+        } else {
+
+            $selectPart = '*';
+
+            if ($fields) {
+
+                $fieldParts = array();
+
+                foreach ($fields as $field) {
+
+                    // TODO add db-brand-specific quotes
+                    $fieldParts[] = $field;
+                }
+
+                $selectPart = implode(', ', $fieldParts);
+
+            }
+
         }
 
         $sql = 'SELECT ' . $selectPart . ' FROM ' . $table;
@@ -314,14 +371,17 @@ class DatabaseTableManager implements TableManager
 
             $sql .= '(' . implode(',', $fieldParts) . ') VALUES ';
 
-            $fieldParts = array();
+            $valueParts = array();
 
-            foreach ($values as $i => $value) {
+            foreach ($names as $i => $name) {
 
-                $fieldParts[] = ':v' . $i;
+                $value = $values[$i];
+
+                $valueParts[] = ':v' . $i;
+
             }
 
-            $sql .= '(' . implode(',', $fieldParts) . ')';
+            $sql .= '(' . implode(',', $valueParts) . ')';
 
             $stmt = $this->connection->prepare($sql);
 
@@ -376,5 +436,159 @@ class DatabaseTableManager implements TableManager
      * @see \BrugOpen\Db\Service\RecordFinder::countRecords()
      */
     public function countRecords($table, $parameters = null)
-    {}
+    {
+
+        // TODO implement this
+
+    }
+
+    /**
+     * @param string $table
+     * @param array $columnDefinitions
+     */
+    public function setColumnDefinitions($table, $columnDefinitions)
+    {
+
+        $this->columnDefinitions[$table] = $columnDefinitions;
+
+    }
+
+    public function createSelectStatementParameters($table, $criteria = null, $fields = null, $orders = null)
+    {
+
+        $parameters = array();
+
+        $bindParams = array();
+
+        if (array_key_exists($table, $this->columnDefinitions)) {
+
+            $fieldParts = array();
+
+            foreach ($this->columnDefinitions[$table] as $column => $columnDefinition) {
+
+                // TODO add db-brand-specific quotes
+
+                if ($columnDefinition & self::COLUMN_DATE) {
+
+                    $fieldParts[] = 'UNIX_TIMESTAMP(' . $column . ') AS ' . $column;
+
+                } else {
+
+                    $fieldParts[] = $column;
+
+                }
+                
+            }
+
+            $selectPart = implode(', ', $fieldParts);
+
+        } else {
+
+            $selectPart = '*';
+
+            if ($fields) {
+
+                $fieldParts = array();
+
+                foreach ($fields as $field) {
+
+                    // TODO add db-brand-specific quotes
+                    $fieldParts[] = $field;
+                }
+
+                $selectPart = implode(', ', $fieldParts);
+                
+            }
+
+        }
+
+        $sql = 'SELECT ' . $selectPart . ' FROM ' . $table;
+
+        if ($criteria) {
+
+            $whereParts = array();
+
+            $i = 0;
+
+            foreach ($criteria as $name => $value) {
+
+                $whereParts[] = '(' . $name . ' = :c' . $i . ')';
+
+                $i ++;
+            }
+
+            $whereClause = implode(' AND ', $whereParts);
+
+            $sql .= ' WHERE ' . $whereClause;
+        }
+
+        if ($criteria) {
+
+            $i = 0;
+
+            foreach ($criteria as $value) {
+
+                $bindParams['c' . $i] = $value;
+
+                $i ++;
+            }
+        }
+
+        $parameters[] = $sql;
+        $parameters[] = $bindParams;
+
+        return $parameters;
+
+    }
+
+    public function createInsertStatementParameters($table, $fields, $records)
+    {
+
+        $parameters = array();
+
+        $bindParams = array();
+
+        $sql = 'INSERT INTO ' . $table . ' ';
+
+        $fieldParts = array();
+
+        foreach ($fields as $field) {
+
+            // TODO escape field name
+            $fieldParts[] = $field;
+        }
+
+        $sql .= '(' . implode(', ', $fieldParts) . ') VALUES ';
+
+        $valueParts = array();
+
+        $i = 0;
+
+        foreach ($records as $record) {
+
+            $values = array();
+
+            foreach ($record as $value) {
+
+                $values[] = ':v' . $i;
+
+                $bindParams['v' . $i] = $value;
+
+                $i++;
+
+            }
+
+            $valueParts[] = '(' . implode(', ', $values) . ')';
+
+        }
+
+        $sql .= implode(', ', $valueParts);
+
+        $parameters[] = $sql;
+        $parameters[] = $bindParams;
+
+        return $parameters;
+
+    }
+    
 }
