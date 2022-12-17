@@ -570,9 +570,17 @@ class DatabaseTableManager implements TableManager
 
             foreach ($record as $value) {
 
-                $values[] = ':v' . $i;
+                if (($value !== null) && is_object($value) && ($value instanceof \DateTime)) {
 
-                $bindParams['v' . $i] = $value;
+                    $values[] = 'FROM_UNIXTIME(:v' . $i . ')';
+                    $bindParams['v' . $i] = $value->getTimestamp();
+
+                } else {
+
+                    $values[] = ':v' . $i;
+                    $bindParams['v' . $i] = $value;
+    
+                }
 
                 $i++;
 

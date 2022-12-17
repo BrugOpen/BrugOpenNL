@@ -149,4 +149,45 @@ class DatabaseTableManagerTest extends TestCase
 
     }
 
+    public function testCreateInsertStatementParametersDateValue()
+    {
+
+        $tableManager = new DatabaseTableManager(null);
+
+        $time1 = mktime(0,0,0,12,31,2020);
+
+        $parameters = $tableManager->createInsertStatementParameters('foo_table', array('field1', 'field2'), array(array('foo', new \DateTime('@' . $time1))));
+
+        $this->assertNotNull($parameters);
+        $this->assertCount(2, $parameters);
+
+        $this->assertEquals('INSERT INTO foo_table (field1, field2) VALUES (:v0, FROM_UNIXTIME(:v1))', $parameters[0]);
+        $this->assertNotEmpty($parameters[1]);
+        $this->assertCount(2, $parameters[1]);
+        $this->assertEquals('foo', $parameters[1]['v0']);
+        $this->assertEquals($time1, $parameters[1]['v1']);
+
+    }
+
+    public function testCreateInsertStatementParametersDateValues()
+    {
+
+        $tableManager = new DatabaseTableManager(null);
+
+        $time1 = mktime(0,0,0,12,31,2020);
+        $time2 = mktime(0,0,0,12,31,2021);
+
+        $parameters = $tableManager->createInsertStatementParameters('foo_table', array('field1', 'field2'), array(array(new \DateTime('@' . $time1), new \DateTime('@' . $time2))));
+
+        $this->assertNotNull($parameters);
+        $this->assertCount(2, $parameters);
+
+        $this->assertEquals('INSERT INTO foo_table (field1, field2) VALUES (FROM_UNIXTIME(:v0), FROM_UNIXTIME(:v1))', $parameters[0]);
+        $this->assertNotEmpty($parameters[1]);
+        $this->assertCount(2, $parameters[1]);
+        $this->assertEquals($time1, $parameters[1]['v0']);
+        $this->assertEquals($time2, $parameters[1]['v1']);
+
+    }
+
 }
