@@ -109,7 +109,7 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertEquals('SELECT id, UNIX_TIMESTAMP(datetime_start) AS datetime_start FROM sometable', $parameters[0]);
         $this->assertEmpty($parameters[1]);
 
-    }    
+    }
 
     public function testCreateInsertStatementParametersSingleRecord()
     {
@@ -190,4 +190,94 @@ class DatabaseTableManagerTest extends TestCase
 
     }
 
+    public function testCreateUpdateStatementParametersNoCriteria()
+    {
+
+        $tableManager = new DatabaseTableManager(null);
+
+        $parameters = $tableManager->createUpdateStatementParameters('foo_table', array('field1' => 'value1', 'field2' => 'value2'));
+
+        $this->assertNotNull($parameters);
+        $this->assertCount(2, $parameters);
+
+        $this->assertEquals('UPDATE foo_table SET field1 = :v0, field2 = :v1', $parameters[0]);
+        $this->assertNotEmpty($parameters[1]);
+        $this->assertCount(2, $parameters[1]);
+        $this->assertEquals('value1', $parameters[1]['v0']);
+        $this->assertEquals('value2', $parameters[1]['v1']);
+
+    }
+
+    public function testCreateUpdateStatementParametersNoCriteriaIntValue()
+    {
+
+        $tableManager = new DatabaseTableManager(null);
+
+        $parameters = $tableManager->createUpdateStatementParameters('foo_table', array('field1' => 'value1', 'field2' => 12, 'field3' => 1.2));
+
+        $this->assertNotNull($parameters);
+        $this->assertCount(2, $parameters);
+
+        $this->assertEquals('UPDATE foo_table SET field1 = :v0, field2 = :v1, field3 = :v2', $parameters[0]);
+        $this->assertNotEmpty($parameters[1]);
+        $this->assertCount(3, $parameters[1]);
+
+        $this->assertEquals('value1', $parameters[1]['v0']);
+
+        $this->assertIsArray($parameters[1]['v1']);
+        $this->assertCount(2, $parameters[1]['v1']);
+        $this->assertEquals(12, $parameters[1]['v1'][0]);
+        $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['v1'][1]);
+
+        $this->assertIsArray($parameters[1]['v2']);
+        $this->assertCount(2, $parameters[1]['v2']);
+        $this->assertEquals(1.2, $parameters[1]['v2'][0]);
+        $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['v2'][1]);
+
+    }
+
+    public function testCreateUpdateStatementParametersWithCriteria()
+    {
+
+        $tableManager = new DatabaseTableManager(null);
+
+        $values = array('field1' => 'value1', 'field2' => 12, 'field3' => 1.2);
+        $criteria = array('id' => 123, 'otherfield' => 'foo');
+
+        $parameters = $tableManager->createUpdateStatementParameters('foo_table', $values, $criteria);
+
+        $this->assertNotNull($parameters);
+        $this->assertCount(2, $parameters);
+
+        $this->assertEquals('UPDATE foo_table SET field1 = :v0, field2 = :v1, field3 = :v2 WHERE (id = :c0) AND (otherfield = :c1)', $parameters[0]);
+
+        $this->assertNotEmpty($parameters[1]);
+        $this->assertCount(5, $parameters[1]);
+
+        $this->assertArrayHasKey('v0', $parameters[1]);
+        $this->assertArrayHasKey('v1', $parameters[1]);
+        $this->assertArrayHasKey('v2', $parameters[1]);
+        $this->assertArrayHasKey('c0', $parameters[1]);
+        $this->assertArrayHasKey('c1', $parameters[1]);
+
+        $this->assertEquals('value1', $parameters[1]['v0']);
+
+        $this->assertIsArray($parameters[1]['v1']);
+        $this->assertCount(2, $parameters[1]['v1']);
+        $this->assertEquals(12, $parameters[1]['v1'][0]);
+        $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['v1'][1]);
+
+        $this->assertIsArray($parameters[1]['v2']);
+        $this->assertCount(2, $parameters[1]['v2']);
+        $this->assertEquals(1.2, $parameters[1]['v2'][0]);
+        $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['v2'][1]);
+
+        $this->assertIsArray($parameters[1]['c0']);
+        $this->assertCount(2, $parameters[1]['c0']);
+        $this->assertEquals(123, $parameters[1]['c0'][0]);
+        $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['c0'][1]);
+
+        $this->assertEquals('foo', $parameters[1]['c1']);
+
+    }
 }

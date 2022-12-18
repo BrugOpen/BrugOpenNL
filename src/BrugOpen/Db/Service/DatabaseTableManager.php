@@ -25,7 +25,7 @@ class DatabaseTableManager implements TableManager
     private $connection;
 
     /**
-     * 
+     *
      */
     private $columnDefinitions = array();
 
@@ -477,7 +477,7 @@ class DatabaseTableManager implements TableManager
                     $fieldParts[] = $column;
 
                 }
-                
+
             }
 
             $selectPart = implode(', ', $fieldParts);
@@ -497,7 +497,7 @@ class DatabaseTableManager implements TableManager
                 }
 
                 $selectPart = implode(', ', $fieldParts);
-                
+
             }
 
         }
@@ -579,7 +579,7 @@ class DatabaseTableManager implements TableManager
 
                     $values[] = ':v' . $i;
                     $bindParams['v' . $i] = $value;
-    
+
                 }
 
                 $i++;
@@ -598,5 +598,115 @@ class DatabaseTableManager implements TableManager
         return $parameters;
 
     }
-    
+
+    /**
+     * @param string $table
+     * @param mixed[] 4values
+     * @param mixed[] $criteria
+     */
+    public function createUpdateStatementParameters($table, $values, $criteria = null)
+    {
+        $parameters = array();
+
+        $bindParams = array();
+
+        $sql = 'UPDATE ' . $table . ' SET ';
+
+        $i = 0;
+
+        foreach (array_keys($values) as $name) {
+
+            if (preg_match('/^[0-9]+$/', $name)) {
+
+                trigger_error('Unexpected numeric column name \'' . $name . '\' to update ' . $table, E_USER_WARNING);
+                return;
+
+            } else {
+
+                // TODO escape field name
+                $setParts[] = $name . ' = :v' . $i;
+            }
+
+            $i ++;
+        }
+
+        $sql .= implode(', ', $setParts);
+
+        if ($criteria) {
+
+            $whereParts = array();
+
+            $i = 0;
+
+            foreach ($criteria as $name => $value) {
+
+                if (is_array($value)) {
+
+                    $paramNames = array();
+
+                    for ($j = 0; $j < count($value); $j ++) {
+
+                        $paramNames[] = ':c' . $i . '_' . $j;
+                    }
+
+                    $whereParts[] = '(' . $name . ' IN (' . implode(',', $paramNames) . '))';
+                } else {
+
+                    $whereParts[] = '(' . $name . ' = :c' . $i . ')';
+                }
+
+                $i ++;
+            }
+
+            $whereClause = implode(' AND ', $whereParts);
+
+            $sql .= ' WHERE ' . $whereClause;
+
+        }
+
+        $i = 0;
+
+        foreach ($values as $value) {
+
+            if (is_int($value) || is_float($value)) {
+
+                $bindParams['v' . $i] = array($value, \PDO::PARAM_INT);
+
+            } else {
+
+                $bindParams['v' . $i] = $value;
+
+            }
+
+            $i ++;
+        }
+
+        if ($criteria) {
+
+            $i = 0;
+
+            foreach ($criteria as $value) {
+
+                if (is_int($value) || is_float($value)) {
+
+                    $bindParams['c' . $i] = array($value, \PDO::PARAM_INT);
+
+                } else {
+
+                    $bindParams['c' . $i] = $value;
+
+                }
+
+                $i ++;
+            }
+
+        }
+
+        $parameters[] = $sql;
+        $parameters[] = $bindParams;
+
+        return $parameters;
+
+    }
+
 }
