@@ -5,4 +5,7 @@
       <directory>tests</directory>
     </testsuite>
   </testsuites>
+  <php>
+    <ini name="date.timezone" value="Europe/Amsterdam"/>
+  </php>
 </phpunit>
