@@ -229,7 +229,7 @@ class NdwQueueProcessorTest extends TestCase
         $record = array();
         $record['id'] = 'SITUATION_1202';
         $record['version'] = 1;
-        $record['last_publication_time'] = new \DateTime('2022-05-09 03:09:39');
+        $record['last_publication_time'] = new \DateTime('2022-05-09T03:09:39Z');
 
         $insertRecords[] = $record;
 
@@ -298,6 +298,15 @@ class NdwQueueProcessorTest extends TestCase
         $this->assertEquals('Ndw.Situation.update', $postedEvents[3]['name']);
         $this->assertEquals('NDW04_NLCPI0211D0518200003_53113614', $postedEvents[3]['params'][0]);
 
+        $this->assertEquals('Operation.update', $postedEvents[4]['name']);
+        $this->assertEquals(201, $postedEvents[4]['params'][0]);
+
+        $this->assertEquals('Operation.update', $postedEvents[5]['name']);
+        $this->assertEquals(203, $postedEvents[5]['params'][0]);
+
+        $this->assertEquals('Operation.update', $postedEvents[6]['name']);
+        $this->assertEquals(204, $postedEvents[6]['params'][0]);
+
         // assert gone operations now closed
 
         $keys = array();
@@ -306,6 +315,10 @@ class NdwQueueProcessorTest extends TestCase
         $numUnfinishedOperations = $tableManager->countRecords('bo_operation', $keys);
 
         $this->assertEquals(1, $numUnfinishedOperations);
+
+        $unfinishedOperations = $tableManager->findRecords('bo_operation', $keys);
+        $this->assertCount(1, $unfinishedOperations);
+        $this->assertEquals(202, $unfinishedOperations[0]['id']);
 
         // assert no DeliveryBreak event posted
 
