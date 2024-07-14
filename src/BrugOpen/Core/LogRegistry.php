@@ -50,7 +50,7 @@ class LogRegistry
 
             if (! array_key_exists($name, $this->logsByName)) {
 
-                if ($logger = $this->logFactory->createLog($name)) {
+                if ($logger = $this->logFactory->createLog($name, $this->context)) {
 
                     $this->logsByName[$name] = $logger;
                 } else {
