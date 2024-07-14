@@ -1,98 +1,22 @@
 <?php
 
-namespace BrugOpen\Geo\Model;
+namespace BrugOpen\Geo\Service;
 
-class LatLng
+use BrugOpen\Model\LatLng;
+
+/**
+ * @deprecated
+ */
+class GeoService
 {
 
     /**
-     *
-     * @var float
+     * Calculates distance in meters between two points
+     * @param LatLng $currentPoint
+     * @param LatLng $wayPoint
+     * @return number
      */
-    private $lat;
-
-    /**
-     *
-     * @var float
-     */
-    private $lng;
-
-    /**
-     *
-     * @param float|string $a
-     * @param float|null $b
-     */
-    public function __construct($a, $b = null)
-    {
-        if (is_string($a) && is_null($b)) {
-
-            $parts = explode(',', str_replace(' ', '', $a), 2);
-
-            $this->lat = (float)$parts[0];
-            $this->lng = (float)$parts[1];
-
-        } else {
-
-            $this->lat = $a;
-            $this->lng = $b;
-
-        }
-
-    }
-
-    /**
-     *
-     * @return float
-     */
-    public function getLat()
-    {
-        return $this->lat;
-    }
-
-    /**
-     *
-     * @return float
-     */
-    public function getLng()
-    {
-        return $this->lng;
-    }
-
-    /**
-     * @param LatLng $latLng
-     * @return boolean
-     */
-    public function equals($latLng)
-    {
-
-        if ($this->lat == $latLng->getLat()) {
-
-            if ($this->lng == $latLng->getLng()) {
-
-                return true;
-
-            }
-
-        }
-
-        return false;
-
-    }
-
-    /**
-     * @return string
-     */
-    public function toString()
-    {
-        return $this->lat . ',' . $this->lng;
-    }
-
-    /**
-     * Calculates distance in meters between this point and another pont
-     * @param LatLng $otherPoint
-     * @return float
-     */
-    public function getDistance($otherPoint)
+    public function getDistance($currentPoint, $wayPoint)
     {
 
         /*
@@ -110,10 +34,10 @@ class LatLng
          var d = R * c;
          */
 
-        $lat1 = $this->getLat();
-        $lon1 = $this->getLng();
-        $lat2 = $otherPoint->getLat();
-        $lon2 = $otherPoint->getLng();
+        $lat1 = $currentPoint->getLat();
+        $lon1 = $currentPoint->getLng();
+        $lat2 = $wayPoint->getLat();
+        $lon2 = $wayPoint->getLng();
 
         $R = 6371000; // earth radius in metres
         $phi1 = deg2rad($lat1);
@@ -135,14 +59,15 @@ class LatLng
 
     /**
      *
+     * @param LatLng $currentPoint
      * @param LatLng $wayPoint
-     * @return float
+     * @return number
      */
-    public function getBearing($wayPoint)
+    public function getBearing($currentPoint, $wayPoint)
     {
 
-        $lat1 = $this->getLat();
-        $lon1 = $this->getLng();
+        $lat1 = $currentPoint->getLat();
+        $lon1 = $currentPoint->getLng();
         $lat2 = $wayPoint->getLat();
         $lon2 = $wayPoint->getLng();
 
@@ -178,8 +103,8 @@ class LatLng
          var brng = Math.atan2(y, x).toDegrees();
          */
 
-        // traveling from 52.143465,4.4955516666667 to 52.140663,4.4873033 requires a bearing of 241 and a bit
-        // traveling from 52.1402417,4.4863917 to 52.140663,4.4873033 requires a bearing of 53 and a bit
+        // traveling from 52.143465,4.4955516666667 to 52.140663,4.4873033 requires a heading of 241 and a bit
+        // traveling from 52.1402417,4.4863917 to 52.140663,4.4873033 requires a heading of 53 and a bit
 
     }
 
