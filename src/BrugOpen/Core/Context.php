@@ -130,7 +130,7 @@ class Context
 
     public function getCache()
     {
-        return $this->cache;
+        return null;
     }
 
     /**
