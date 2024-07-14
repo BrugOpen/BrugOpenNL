@@ -9,7 +9,8 @@ interface LogFactory
     /**
      *
      * @param string $name
+     * @param Context $context
      * @return LoggerInterface
      */
-    public function createLog($name);
+    public function createLog($name, $context);
 }
