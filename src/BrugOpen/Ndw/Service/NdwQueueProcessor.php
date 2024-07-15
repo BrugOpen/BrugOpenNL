@@ -112,53 +112,106 @@ class NdwQueueProcessor
     }
 
     /**
-     * 
+     *
      */
     public function processQueue()
     {
         $datadir = $this->context->getAppRoot() . 'data' . DIRECTORY_SEPARATOR;
         $queueDir = $datadir . 'ndw' . DIRECTORY_SEPARATOR . 'queue' . DIRECTORY_SEPARATOR;
 
+        $log = $this->getLog();
+
         if (! is_dir($queueDir)) {
 
-            $this->log->warning('NDW Queue dir ' . $queueDir . ' does not exist');
+            $log->warning('NDW Queue dir ' . $queueDir . ' does not exist');
             return;
         }
 
-        $this->log->info('Processing NDW queue');
+        $log->info('Processing NDW queue');
 
         $files = $this->getQueueFiles($queueDir);
 
         if (sizeof($files) > 0) {
 
             $this->processQueueFiles($files);
+
         }
+
     }
 
     /**
-     * 
+     *
      * @param string[] $queueFiles
+     * @param boolean $archiveFiles
      */
-    public function processQueueFiles($queueFiles)
+    public function processQueueFiles($queueFiles, $archiveFiles = true)
     {
         if (sizeof($queueFiles) > 0) {
 
-            $this->log->info('Processing ' . sizeof($queueFiles) . ' NDW files');
+            $log = $this->getLog();
+
+            $log->info('Processing ' . sizeof($queueFiles) . ' NDW files');
 
             $situationProcessor = $this->getSituationProcessor();
+
+            $numProcessed = 0;
 
             foreach ($queueFiles as $queueFile) {
 
                 $this->processQueueFile($queueFile);
 
+                if ($archiveFiles) {
+
+                    // archive processed file
+
+                    $archiveRoot = $this->getArchiveRoot();
+
+                    $archiveDir = $this->getArchiveDir($archiveRoot, time());
+
+                    if (!is_dir($archiveDir)) {
+
+                        mkdir($archiveDir, 0755, true);
+
+                    }
+
+                    $fileArchived = false;
+
+                    if (is_dir($archiveDir)) {
+
+                        $archiveFile = $archiveDir . basename($queueFile);
+
+                        $fileArchived = rename($queueFile, $archiveFile);
+
+                    }
+
+                    if ($fileArchived) {
+
+                        $log->info('Archived ' . basename($queueFile));
+
+                    }
+
+                }
+
+                $numProcessed++;
+
+                if ($numProcessed % 100 == 0) {
+
+                    $log->info('Processed ' . $numProcessed . ' NDW files');
+
+                }
+
             }
 
+            $log->info('Processed ' . $numProcessed . ' NDW files');
+
             $situationProcessor->markUncertainSituationsIgnored();
+
         }
+
     }
 
     /**
-     * 
+     *
      * @param string $queueFile
      */
     public function processQueueFile($queueFile)
@@ -169,7 +222,9 @@ class NdwQueueProcessor
 
         $file = basename($queueFile);
 
-        $this->log->info('Processing ' . $file);
+        $log = $this->getLog();
+
+        $log->info('Processing ' . $file);
 
         $fileData = $fileParser->parseFile($queueFile);
 
@@ -210,7 +265,7 @@ class NdwQueueProcessor
 
                         if ($publicationTime != null) {
 
-                            $this->log->debug('Checking unfunished gone operations for publication time ' . $publicationTime->format('Y-m-d H:i:s'));
+                            $log->debug('Checking unfunished gone operations for publication time ' . $publicationTime->format('Y-m-d H:i:s'));
 
                             $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
                         }
@@ -238,7 +293,7 @@ class NdwQueueProcessor
 
         } else {
 
-            $this->log->error('Could not parse ' . $file);
+            $log->error('Could not parse ' . $file);
         }
 
     }
@@ -282,4 +337,42 @@ class NdwQueueProcessor
 
         return $files;
     }
+
+    /**
+     * @return string
+     */
+    public function getArchiveRoot()
+    {
+
+        $datadir = $this->context->getAppRoot() . 'data' . DIRECTORY_SEPARATOR;
+        $archiveRoot = $datadir . 'ndw' . DIRECTORY_SEPARATOR . 'archive' . DIRECTORY_SEPARATOR;
+
+        return $archiveRoot;
+
+    }
+
+    /**
+     * @param string $archiveRoot
+     * @param int $time
+     * @return string
+     */
+    public function getArchiveDir($archiveRoot, $time)
+    {
+
+        $date = date('Y-m-d', $time);
+
+        if (substr($archiveRoot, -1) != DIRECTORY_SEPARATOR) {
+
+            $archiveRoot .= DIRECTORY_SEPARATOR;
+
+        }
+
+        $yearDir = $archiveRoot . date('Y', $time) . DIRECTORY_SEPARATOR;
+
+        $archiveDir = $yearDir . $date . DIRECTORY_SEPARATOR;
+
+        return $archiveDir;
+
+    }
+
 }
