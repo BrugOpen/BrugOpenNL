@@ -1,4 +1,7 @@
 <?php
+
+namespace BrugOpen\Ndw\Service;
+
 use BrugOpen\Core\TestEventDispatcher;
 use BrugOpen\Db\Service\MemoryTableManager;
 use BrugOpen\Ndw\Service\NdwQueueProcessor;
@@ -14,7 +17,7 @@ class NdwQueueProcessorTest extends TestCase
     public function testGetQueueFiles()
     {
 
-        $testFilesDir = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFilesDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
         $queueDir = $testFilesDir . 'ndw-queue' . DIRECTORY_SEPARATOR;
 
         $queueProcessor = new NdwQueueProcessor(null);
@@ -26,7 +29,6 @@ class NdwQueueProcessorTest extends TestCase
 
         $this->assertEquals('brugdata-20220619175002-285439-push.xml.gz', basename($queueFiles[0]));
         $this->assertEquals('brugdata-20220619175933-290870-push.xml.gz', basename($queueFiles[26]));
-
     }
 
     public function testProcessFileSingleSituation()
@@ -57,7 +59,7 @@ class NdwQueueProcessorTest extends TestCase
 
         $queueProcessor->setSituationProcessor($situationProcessor);
 
-        $testFilesDir = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFilesDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
         $testFile = $testFilesDir . 'brugdata-single-situation-push-version1.xml.gz';
 
         // process file with single situation
@@ -101,13 +103,10 @@ class NdwQueueProcessorTest extends TestCase
 
                 $hasDeliveryBreakEvent = true;
                 break;
-
             }
-
         }
 
         $this->assertFalse($hasDeliveryBreakEvent);
-        
     }
 
     public function testProcessFileSnapshot()
@@ -258,7 +257,7 @@ class NdwQueueProcessorTest extends TestCase
 
         $this->assertEquals(4, $numUnfinishedOperations);
 
-        $testFilesDir = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFilesDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
 
         $testFile = $testFilesDir . 'brugdata-snapshot.xml.gz';
 
@@ -334,13 +333,10 @@ class NdwQueueProcessorTest extends TestCase
 
                 $hasDeliveryBreakEvent = true;
                 break;
-
             }
-
         }
 
         $this->assertFalse($hasDeliveryBreakEvent);
-
     }
 
     public function testProcessKeepAliveDeliveryBreak()
@@ -359,7 +355,7 @@ class NdwQueueProcessorTest extends TestCase
 
         // process file with KeepAlive + DeliveryBreak
 
-        $testFilesDir = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFilesDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
 
         $testFile = $testFilesDir . 'brugdata-only-keepalive-push.xml.gz';
 
@@ -381,13 +377,9 @@ class NdwQueueProcessorTest extends TestCase
 
                 $hasDeliveryBreakEvent = true;
                 break;
-
             }
-
         }
 
         $this->assertTrue($hasDeliveryBreakEvent);
-
     }
-
 }
