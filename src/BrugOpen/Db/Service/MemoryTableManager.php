@@ -1,6 +1,9 @@
 <?php
 namespace BrugOpen\Db\Service;
 
+use BrugOpen\Db\Model\Criterium;
+use BrugOpen\Db\Model\CriteriumFieldComparison;
+
 class MemoryTableManager implements TableManager
 {
 
@@ -225,37 +228,121 @@ class MemoryTableManager implements TableManager
 
                     foreach ($criteria as $criteriumName => $criteriumValue) {
 
-                        if (array_key_exists($criteriumName, $record)) {
+                        $criteriumField = $criteriumName;
+                        $operator = Criterium::OPERATOR_EQUALS;
+                        $expression = $criteriumValue;
 
-                            if (is_array($criteriumValue)) {
+                        if (is_object($criteriumValue) && ($criteriumValue instanceof CriteriumFieldComparison)) {
 
-                                if (! in_array($record[$criteriumName], $criteriumValue)) {
+                            $criteriumField = $criteriumValue->getField();
+                            $operator = $criteriumValue->getOperator();
+                            $expression = $criteriumValue->getExpression();
+
+                            $criteriumValue = null;
+
+                        }
+
+                        $fieldValue = null;
+
+                        if (array_key_exists($criteriumField, $record)) {
+
+                            $fieldValue = $record[$criteriumField];
+
+                            if (is_object($fieldValue) && ($fieldValue instanceof \DateTime)) {
+
+                                $fieldValue = $fieldValue->getTimestamp();
+
+                            }
+
+                            if (is_array($expression)) {
+
+                                if (! in_array($fieldValue, $expression)) {
 
                                     $itemMatches = false;
-                                    break;
+
                                 }
+
                             } else {
 
-                                if ($criteriumValue === null) {
+                                if ($expression === null) {
 
-                                    if ($record[$criteriumName] !== null) {
+                                    if ($fieldValue !== null) {
 
                                         $itemMatches = false;
-                                        break;
                                     }
-                                } else if (! ($record[$criteriumName] == $criteriumValue)) {
 
-                                    $itemMatches = false;
-                                    break;
+                                } else {
+
+                                    if (is_object($expression) && ($expression instanceof \DateTime)) {
+
+                                        $expression = $expression->getTimestamp();
+
+                                    }
+
+                                    if ($operator == Criterium::OPERATOR_EQUALS) {
+
+                                        if (! ($fieldValue == $expression)) {
+
+                                            $itemMatches = false;
+                                        }
+
+                                    } else if ($operator == Criterium::OPERATOR_NOT_EQUALS) {
+
+                                        if ($fieldValue == $expression) {
+
+                                            $itemMatches = false;
+                                        }
+
+                                    } else if ($operator == Criterium::OPERATOR_GT) {
+
+                                        if (! ($fieldValue > $expression)) {
+
+                                            $itemMatches = false;
+                                        }
+
+                                    } else if ($operator == Criterium::OPERATOR_GE) {
+
+                                        if (! ($fieldValue >= $expression)) {
+
+                                            $itemMatches = false;
+                                        }
+
+                                    } else if ($operator == Criterium::OPERATOR_LT) {
+
+                                        if (! ($fieldValue < $expression)) {
+
+                                            $itemMatches = false;
+                                        }
+
+                                    } else if ($operator == Criterium::OPERATOR_LE) {
+
+                                        if (! ($fieldValue <= $expression)) {
+
+                                            $itemMatches = false;
+                                        }
+
+                                    }
+
                                 }
+
                             }
+
                         } else {
 
-                            if ($criteriumValue !== null) {
+                            if ($expression !== null) {
 
                                 $itemMatches = false;
+
                             }
+
                         }
+
+                        if (!$itemMatches) {
+
+                            break;
+
+                        }
+
                     }
                 }
 
@@ -348,10 +435,12 @@ class MemoryTableManager implements TableManager
 
                 $value = $item[$field];
 
-                if (is_object($value) && is_a('\\DateTime', $value)) {
+                if (is_object($value) && ($value instanceof \DateTime)) {
 
                     $value = $value->getTimestamp();
+
                 }
+
             }
 
             if (($value !== null) && ! is_object($value)) {
