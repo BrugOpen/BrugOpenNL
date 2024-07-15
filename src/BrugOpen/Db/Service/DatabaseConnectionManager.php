@@ -139,6 +139,7 @@ class DatabaseConnectionManager
                             'charset' => 'utf8'
                         );
                     }
+
                 } else {
 
                     $type = 'mysql';
@@ -147,10 +148,10 @@ class DatabaseConnectionManager
 
                     $conn = array(
                         'driver' => 'pdo_' . $type,
-                        'user' => $configParams['DB_USER'],
-                        'password' => $configParams['DB_PASS'],
-                        'host' => $configParams['DB_HOST'],
-                        'dbname' => $configParams['DB_NAME'],
+                        'user' => $configParams['database.user'],
+                        'password' => $configParams['database.pass'],
+                        'host' => $configParams['database.host'],
+                        'dbname' => $configParams['database.name'],
                         'charset' => 'utf8'
                     );
                 }
