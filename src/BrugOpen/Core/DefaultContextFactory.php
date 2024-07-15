@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Core;
 
 class DefaultContextFactory implements ContextFactory
@@ -13,7 +14,7 @@ class DefaultContextFactory implements ContextFactory
         $appRoot = $appRoot;
         $context = new Context($appRoot);
 
-        $eventListener = new DefaultEventListener();
+        $eventListener = $this->createDefaultEventListener();
         $context->getEventDispatcher()->addObserver('Context.initialized', array(
             $eventListener,
             'onContextInitialized'
@@ -22,5 +23,14 @@ class DefaultContextFactory implements ContextFactory
         $context->initialize();
 
         return $context;
+    }
+
+    /**
+     * @return DefaultEventListener
+     */
+    public function createDefaultEventListener()
+    {
+        $eventListener = new DefaultEventListener();
+        return $eventListener;
     }
 }
