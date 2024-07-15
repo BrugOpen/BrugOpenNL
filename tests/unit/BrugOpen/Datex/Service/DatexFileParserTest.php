@@ -1,4 +1,5 @@
 <?php
+
 use BrugOpen\Datex\Service\DatexFileParser;
 use PHPUnit\Framework\TestCase;
 
@@ -7,7 +8,7 @@ class DatexFileParserTest extends TestCase
 
     public function testParsePushMessageWithOnlyKeepAliveUnzipped()
     {
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-only-keepalive-push.xml';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-only-keepalive-push.xml';
 
         $parser = new DatexFileParser();
 
@@ -41,7 +42,7 @@ class DatexFileParserTest extends TestCase
     {
         $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
 
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-only-keepalive-push.xml.gz';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-only-keepalive-push.xml.gz';
 
         $parser = new DatexFileParser();
 
@@ -75,7 +76,7 @@ class DatexFileParserTest extends TestCase
     {
         $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
 
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-exchange-payload-push.xml.gz';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-exchange-payload-push.xml.gz';
 
         $parser = new DatexFileParser();
 
@@ -290,7 +291,7 @@ class DatexFileParserTest extends TestCase
 
     public function testParseSnapshot()
     {
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-snapshot.xml.gz';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-snapshot.xml.gz';
 
         $parser = new DatexFileParser();
 
@@ -367,7 +368,7 @@ class DatexFileParserTest extends TestCase
 
     public function testParseSnapshotLarge()
     {
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-snapshot-large.xml.gz';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-snapshot-large.xml.gz';
 
         $parser = new DatexFileParser();
 
@@ -446,7 +447,7 @@ class DatexFileParserTest extends TestCase
     {
         $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
 
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-end.xml.gz';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-end.xml.gz';
 
         $parser = new DatexFileParser();
 
@@ -485,7 +486,7 @@ class DatexFileParserTest extends TestCase
     {
         $this->assertTrue(in_array('compress.zlib', stream_get_wrappers()));
 
-        $testFile = dirname(__FILE__) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-cancel.xml.gz';
+        $testFile = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR . 'brugdata-lifecycle-cancel.xml.gz';
 
         $parser = new DatexFileParser();
 
