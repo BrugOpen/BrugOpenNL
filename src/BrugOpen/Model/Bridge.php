@@ -2,6 +2,8 @@
 
 namespace BrugOpen\Model;
 
+use BrugOpen\Geo\Model\LatLng;
+
 class Bridge
 {
 
@@ -46,6 +48,32 @@ class Bridge
      * @var string
      */
     private $isrsCode;
+
+    /**
+     * @var int[]
+     */
+    private $connectedSegmentIds;
+
+    /**
+     * @var float
+     */
+    private $clearance;
+
+    /**
+     *
+     * @var int
+     */
+    private $lastStartedOperationId;
+
+    /**
+     * @var boolean
+     */
+    private $announceApproaches;
+
+    /**
+     * @var boolean
+     */
+    private $active;
 
     /**
      * @return number
@@ -128,7 +156,7 @@ class Bridge
     }
 
     /**
-     * @return \BrugOpen\Model\LatLng
+     * @return \BrugOpen\Geo\Model\LatLng
      */
     public function getLatLng()
     {
@@ -136,7 +164,7 @@ class Bridge
     }
 
     /**
-     * @param \BrugOpen\Model\LatLng $latLng
+     * @param \BrugOpen\Geo\Model\LatLng $latLng
      */
     public function setLatLng($latLng)
     {
@@ -159,4 +187,83 @@ class Bridge
         $this->isrsCode = $isrsCode;
     }
 
+    /**
+     * @return number
+     */
+    public function getLastStartedOperationId()
+    {
+        return $this->lastStartedOperationId;
+    }
+
+    /**
+     * @param number $lastStartedOperationId
+     */
+    public function setLastStartedOperationId($lastStartedOperationId)
+    {
+        $this->lastStartedOperationId = $lastStartedOperationId;
+    }
+
+    /**
+     * @return int[]
+     */
+    public function getConnectedSegmentIds()
+    {
+        return $this->connectedSegmentIds;
+    }
+
+    /**
+     * @param int[] $connectedSegmentIds
+     */
+    public function setConnectedSegmentIds($connectedSegmentIds)
+    {
+        $this->connectedSegmentIds = $connectedSegmentIds;
+    }
+
+    /**
+     * @return float
+     */
+    public function getClearance()
+    {
+        return $this->clearance;
+    }
+
+    /**
+     * @param float $clearance
+     */
+    public function setClearance($clearance)
+    {
+        $this->clearance = $clearance;
+    }
+
+    /**
+     * @return boolean
+     */
+    public function getAnnounceApproaches()
+    {
+        return $this->announceApproaches;
+    }
+
+    /**
+     * @param boolean $announceApproaches
+     */
+    public function setAnnounceApproaches($announceApproaches)
+    {
+        $this->announceApproaches = $announceApproaches;
+    }
+
+    /**
+     * @return boolean|null
+     */
+    public function isActive()
+    {
+        return $this->active;
+    }
+
+    /**
+     * @param boolean|null $active
+     */
+    public function setActive($active)
+    {
+        $this->active = $active;
+    }
 }
