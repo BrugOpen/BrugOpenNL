@@ -49,11 +49,8 @@ class SituationProcessor
     {
         if ($this->tableManager == null) {
 
-            $connectionManager = $this->context->getDatabaseConnectionManager();
-            $connection = $connectionManager->getConnection();
-            $tableManager = new DatabaseTableManager($connection);
+            $this->tableManager = $this->context->getService('BrugOpen.TableManager');
 
-            $this->tableManager = $tableManager;
         }
 
         return $this->tableManager;
@@ -164,9 +161,16 @@ class SituationProcessor
 
                         if ($alertCLocation) {
 
-                            $location = $alertCLocation->getSpecificLocation();
+                            if ($alertCLocation->getSpecificLocation()) {
+
+                                $location = $alertCLocation->getSpecificLocation();
+
+                            }
+
                         }
+
                     }
+
                 }
 
                 $pointByCoordinates = $groupOfLocations->getPointByCoordinates();
@@ -224,11 +228,15 @@ class SituationProcessor
             }
         }
 
-        $matches = array();
+        if ($location == null) {
 
-        if (preg_match('/^[a-z0-9]+_(NL[a-z0-9]+)_[a-z0-9]+$/i', $situation->getId(), $matches)) {
+            $matches = array();
 
-            $location = $matches[1];
+            if (preg_match('/^[a-z0-9]+_(NL[a-z0-9]+)_[a-z0-9]+$/i', $situation->getId(), $matches)) {
+
+                $location = $matches[1];
+            }
+
         }
 
         if ($existingSituation) {
@@ -252,7 +260,7 @@ class SituationProcessor
                     $values['status'] = $status;
                 }
 
-                $res = $tableManager->updateRecords('bo_situation', $keys, $values);
+                $res = $tableManager->updateRecords('bo_situation', $values, $keys);
 
                 if ($res) {
 
@@ -406,7 +414,7 @@ class SituationProcessor
 
                     // mark operation 'gone'
 
-                    $this->log->info('Marking operation ' . $operationId . ' gone');
+                    $this->getLog()->info('Marking operation ' . $operationId . ' gone');
 
                     $updateValues = array();
 
