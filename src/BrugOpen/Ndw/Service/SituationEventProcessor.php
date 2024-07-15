@@ -1,7 +1,6 @@
 <?php
 namespace BrugOpen\Ndw\Service;
 
-use BrugOpen\Db\Service\DatabaseTableManager;
 use BrugOpen\Geo\Model\LatLng;
 use BrugOpen\Model\Operation;
 use BrugOpen\Service\BridgeIndexService;
@@ -10,7 +9,7 @@ use BrugOpen\Service\BridgeService;
 class SituationEventProcessor
 {
 
-        /**
+    /**
      *
      * @var \BrugOpen\Core\Context
      */
@@ -61,11 +60,8 @@ class SituationEventProcessor
     {
         if ($this->tableManager == null) {
 
-            $connectionManager = $this->context->getDatabaseConnectionManager();
-            $connection = $connectionManager->getConnection();
-            $tableManager = new DatabaseTableManager($connection);
+            $this->tableManager = $this->context->getService('BrugOpen.TableManager');
 
-            $this->tableManager = $tableManager;
         }
 
         return $this->tableManager;
@@ -193,12 +189,16 @@ class SituationEventProcessor
     {
         $this->log = $log;
     }
-   
+
     public function onSituationUpdate($situationId)
     {
 
+        $log = $this->getLog();
+
         // load all situation version records
-        $situationVersions = $this->loadSituationVersions($situationId);
+        $allSituationVersions = $this->loadSituationVersions($situationId);
+
+        $situationVersions = $allSituationVersions;
 
         if ($situationVersions) {
 
@@ -233,7 +233,7 @@ class SituationEventProcessor
                 }
 
             }
-            
+
             if (array_key_exists('time_end', $lastSituationVersion)) {
 
                 if ($lastSituationVersion['time_end']) {
@@ -244,26 +244,17 @@ class SituationEventProcessor
 
             }
 
-            if (array_key_exists('time_start', $lastSituationVersion)) {
+            // if (array_key_exists('time_start', $lastSituationVersion)) {
 
-                if ($lastSituationVersion['time_start']) {
+            //     if ($lastSituationVersion['time_start']) {
 
-                    $timeGone = $lastSituationVersion['time_start']->getTimestamp();
+            //         $timeGone = $lastSituationVersion['time_start']->getTimestamp();
 
-                }
+            //     }
 
-            }
+            // }
 
-            if (array_key_exists('certainty', $lastSituationVersion)) {
-
-                if ($lastSituationVersion['certainty']) {
-
-                    // FIXME use getCertainty()
-                    $certainty = $lastSituationVersion['certainty'];
-
-                }
-
-            }
+            $certainty = $this->getCertainty($allSituationVersions);
 
             $notifyOperationEvent = false;
 
@@ -285,41 +276,41 @@ class SituationEventProcessor
                     if (array_key_exists('time_start', $existingOperation)) {
 
                         if ($existingOperation['time_start']) {
-        
+
                             $operationTimeStart = $existingOperation['time_start']->getTimestamp();
-        
+
                         }
-        
+
                     }
-                    
+
                     if (array_key_exists('time_end', $existingOperation)) {
-        
+
                         if ($existingOperation['time_end']) {
-        
+
                             $operationTimeEnd = $existingOperation['time_end']->getTimestamp();
-        
+
                         }
-        
+
                     }
-        
+
                     if (array_key_exists('time_start', $existingOperation)) {
-        
+
                         if ($existingOperation['time_start']) {
-        
+
                             $operationTimeGone = $existingOperation['time_start']->getTimestamp();
-        
+
                         }
-        
+
                     }
-        
+
                     if (array_key_exists('certainty', $existingOperation)) {
-        
+
                         if ($existingOperation['certainty']) {
-        
+
                             $operationCertainty = $existingOperation['certainty'];
-        
+
                         }
-        
+
                     }
 
                     $operationNeedsUpdate = false;
@@ -350,13 +341,19 @@ class SituationEventProcessor
 
                     if ($operationNeedsUpdate) {
 
+                        $log->info('Updating operation ' . $operationId);
+
                         $bridgeId = null;
 
-                        $this->updateOperation($operationId, $timeStart, $timeEnd, $timeGone, $certainty, $bridgeId);
+                        $this->updateOperation($operationId, null, $timeStart, $timeEnd, $timeGone, $certainty, $bridgeId);
 
                         $notifyOperationEvent = true;
 
                     }
+
+                } else {
+
+                    $log->error('Could not load operation ' . $operationId);
 
                 }
 
@@ -382,7 +379,11 @@ class SituationEventProcessor
 
                             if ($lastSituationVersion['location']) {
 
-                                $ndwLocationId = $lastSituationVersion['location'];
+                                if (preg_match('/^[1-9]+[0-9]*$/', $lastSituationVersion['location'])) {
+
+                                    $ndwLocationId = $lastSituationVersion['location'];
+
+                                }
 
                             }
 
@@ -459,35 +460,47 @@ class SituationEventProcessor
 
                                 }
 
+                                $log->info('Inserting bridge for ' . ($isrs ? ('isrs ' . $isrs) : ('ndw id ' . $ndwLocationId)));
+
                                 $insertedBridge = $bridgeService->insertBridgeFromNdwData($ndwLocationId, $isrs, $latLng);
 
                                 if ($insertedBridge) {
 
                                     $bridgeId = $insertedBridge->getId();
 
-                                    if ($isrs) {
+                                    if ($bridgeId) {
 
-                                        if ($bridgeIndexService) {
+                                        // update index
 
-                                            $bridgeIndexService->addBridgeIsrs($bridgeId, $isrs);
+                                        if ($isrs) {
+
+                                            if ($bridgeIndexService) {
+
+                                                $bridgeIndexService->addBridgeIsrs($bridgeId, $isrs);
+
+                                            }
 
                                         }
 
+                                        // post bridge insert event
+                                        $eventDispatcher = $this->getEventDispatcher();
+
+                                        if ($eventDispatcher) {
+
+                                            $eventDispatcher->postEvent('Bridge.insert', array($bridgeId));
+
+                                        }
+
+                                    } else {
+
+                                        $log->error('Inserted bridge for ' . ($isrs ? ('isrs ' . $isrs) : ('ndw id ' . $ndwLocationId)) . ' does not have bridge id');
+
                                     }
 
-                                }
+                                } else {
 
-                            }
+                                    $log->error('Could not insert bridge for ' . ($isrs ? ('isrs ' . $isrs) : ('ndw id ' . $ndwLocationId)));
 
-                            if ($bridgeId) {
-
-                                // post bridge insert event
-                                $eventDispatcher = $this->getEventDispatcher();
-
-                                if ($eventDispatcher) {
-            
-                                    $eventDispatcher->postEvent('Bridge.insert', array($bridgeId));
-            
                                 }
 
                             }
@@ -496,13 +509,43 @@ class SituationEventProcessor
 
                     }
 
+                    $log->info('Creating operation for ' . $situationId);
+
                     // insert operation
-                    $operationId = $this->updateOperation(null, $timeStart, $timeEnd, $timeGone, $certainty, $bridgeId);
+                    $operationId = $this->updateOperation(null, $situationId, $timeStart, $timeEnd, $timeGone, $certainty, $bridgeId);
 
                     if ($operationId) {
 
                         // notify operation event
                         $notifyOperationEvent = true;
+
+                    }
+
+                }
+
+            }
+
+            // update operationId in situation versions if needed
+
+            if ($operationId) {
+
+                $tableManager = $this->getTableManager();
+
+                if ($allSituationVersions && $tableManager) {
+
+                    foreach ($allSituationVersions as $situationVersion) {
+
+                        if ($situationVersion['operation_id']) {
+                            continue;
+                        }
+
+                        $keys = array();
+                        $keys['id'] = $situationVersion['id'];
+                        $keys['version'] = $situationVersion['version'];
+
+                        $values['operation_id'] = $operationId;
+
+                        $tableManager->updateRecords('bo_situation', $values, $keys);
 
                     }
 
@@ -527,6 +570,7 @@ class SituationEventProcessor
             }
 
         }
+
     }
 
     /**
@@ -604,13 +648,14 @@ class SituationEventProcessor
 
     /**
      * @param int $operationId
+     * @param string $situationId
      * @param int $timeStart
      * @param int $timeEnd
      * @param int $timeGone
      * @param int $certainty
      * @param int $bridgeId
      */
-    public function updateOperation($operationId, $timeStart, $timeEnd, $timeGone, $certainty, $bridgeId)
+    public function updateOperation($operationId, $situationId, $timeStart, $timeEnd, $timeGone, $certainty, $bridgeId)
     {
         $res = null;
 
@@ -627,6 +672,12 @@ class SituationEventProcessor
             $values['datetime_gone'] = null;
             $values['time_gone'] = null;
             $values['certainty'] = null;
+
+            if ($situationId) {
+
+                $values['event_id'] = $situationId;
+
+            }
 
             if ($timeStart) {
 
@@ -666,11 +717,13 @@ class SituationEventProcessor
                 $criteria = array();
                 $criteria['id'] = $operationId;
 
-                $tableManager->updateRecords('bo_operation', $values);
+                $tableManager->updateRecords('bo_operation', $values, $criteria);
 
                 $res = $operationId;
 
             } else {
+
+                $values['current'] = 1;
 
                 $res = $tableManager->insertRecord('bo_operation', $values);
 
