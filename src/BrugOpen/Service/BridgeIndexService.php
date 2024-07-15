@@ -38,11 +38,8 @@ class BridgeIndexService
 
             if ($this->context != null) {
 
-                $connectionManager = $this->context->getDatabaseConnectionManager();
-                $connection = $connectionManager->getConnection();
-                $tableManager = new DatabaseTableManager($connection);
- 
-                $this->tableManager = $tableManager;
+                $this->tableManager = $this->context->getService('BrugOpen.TableManager');
+
             }
 
         }
@@ -83,9 +80,9 @@ class BridgeIndexService
                     $bridgeId = $bridge['bridge_id'];
 
                 }
-        
+
             }
-    
+
         }
 
         return $bridgeId;
@@ -115,9 +112,9 @@ class BridgeIndexService
                     $bridgeId = $bridge['id'];
 
                 }
-        
+
             }
-    
+
         }
 
         return $bridgeId;
@@ -140,6 +137,10 @@ class BridgeIndexService
                 $values = array();
                 $values['isrs_code'] = $isrs;
                 $values['bridge_id'] = $bridgeId;
+
+                $now = date('Y-m-d H:i:s');
+                $values['datetime_created'] = $now;
+                $values['datetime_modified'] = $now;
 
                 $tableManager->insertRecord('bo_bridge_isrs', $values);
 
