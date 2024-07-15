@@ -97,11 +97,18 @@ class BridgeService
 
             $allBridges = array();
 
-            $sql = 'SELECT * FROM bo_bridge';
+            $records = array();
 
-            if ($results = $this->context->getDataStore()->executeQuery($sql)) {
+            $tableManager = $this->getTableManager();
 
-                while ($row = $results->fetch_assoc()) {
+            if ($tableManager) {
+
+                $records = $tableManager->findRecords('bo_bridge');
+            }
+
+            if ($records) {
+
+                foreach ($records as $row) {
 
                     $bridgeId = (int)$row['id'];
 
