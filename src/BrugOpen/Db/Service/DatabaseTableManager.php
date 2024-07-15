@@ -1,5 +1,9 @@
 <?php
+
 namespace BrugOpen\Db\Service;
+
+use BrugOpen\Db\Model\Criterium;
+use BrugOpen\Db\Model\CriteriumFieldComparison;
 
 class DatabaseTableManager implements TableManager
 {
@@ -49,98 +53,67 @@ class DatabaseTableManager implements TableManager
     {
         $records = null;
 
-        if (array_key_exists($table, $this->columnDefinitions)) {
+        $statementParameters = $this->createSelectStatementParameters($table, $criteria, $fields, $orders, $maxResults, $offset);
 
-            $fieldParts = array();
+        if ($table == 'bo_operation') {
 
-            foreach ($this->columnDefinitions[$table] as $column => $columnDefinition) {
+            // var_dump($statementParameters);exit;
+        }
 
-                if ($fields) {
+        if ($table == 'bo_bridge_passage') {
 
-                    if (!in_array($column, $fields)) {
+            // var_dump($statementParameters);exit;
 
-                        continue;
+        }
 
+        if ($statementParameters) {
+
+            $sql = $statementParameters[0];
+            $bindParams = $statementParameters[1];
+
+            $stmt = $this->connection->prepare($sql);
+
+            if ($bindParams) {
+
+                foreach ($bindParams as $key => $value) {
+
+                    if (is_array($value)) {
+
+                        $stmt->bindValue($key, $value[0], $value[1]);
+                    } else {
+
+                        $stmt->bindValue($key, $value);
+                    }
+                }
+            }
+
+            if ($stmt->execute()) {
+
+                $records = array();
+
+                while ($record = $stmt->fetch(\PDO::FETCH_ASSOC)) {
+
+                    $values = $record;
+
+                    if (array_key_exists($table, $this->columnDefinitions)) {
+
+                        foreach ($this->columnDefinitions[$table] as $column => $columnDefinition) {
+
+                            if ($columnDefinition & self::COLUMN_DATE) {
+
+                                if (array_key_exists($column, $record)) {
+
+                                    if (preg_match('/^[1-9]+[0-9]*$/', $record[$column])) {
+
+                                        $values[$column] = new \DateTime('@' . $record[$column]);
+                                    }
+                                }
+                            }
+                        }
                     }
 
+                    $records[] = $values;
                 }
-
-                if ($columnDefinition & self::COLUMN_DATE) {
-
-                    $fieldParts[] = 'UNIX_TIMESTAMP(' . $column . ')';
-
-                } else {
-
-                    // TODO add db-brand-specific quotes
-                    $fieldParts[] = $column;
-
-                }
-
-            }
-
-            $selectPart = implode(', ', $fieldParts);
-
-        } else {
-
-            $selectPart = '*';
-
-            if ($fields) {
-
-                $fieldParts = array();
-
-                foreach ($fields as $field) {
-
-                    // TODO add db-brand-specific quotes
-                    $fieldParts[] = $field;
-                }
-
-                $selectPart = implode(', ', $fieldParts);
-
-            }
-
-        }
-
-        $sql = 'SELECT ' . $selectPart . ' FROM ' . $table;
-
-        if ($criteria) {
-
-            $whereParts = array();
-
-            $i = 0;
-
-            foreach ($criteria as $name => $value) {
-
-                $whereParts[] = '(' . $name . ' = :c' . $i . ')';
-
-                $i ++;
-            }
-
-            $whereClause = implode(' AND ', $whereParts);
-
-            $sql .= ' WHERE ' . $whereClause;
-        }
-
-        $stmt = $this->connection->prepare($sql);
-
-        if ($criteria) {
-
-            $i = 0;
-
-            foreach ($criteria as $value) {
-
-                $stmt->bindValue('c' . $i, $value);
-
-                $i ++;
-            }
-        }
-
-        if ($stmt->execute()) {
-
-            $records = array();
-
-            while ($record = $stmt->fetch(\PDO::FETCH_ASSOC)) {
-
-                $records[] = $record;
             }
         }
 
@@ -173,88 +146,31 @@ class DatabaseTableManager implements TableManager
 
         if ($table && $values) {
 
-            $sql = 'UPDATE ' . $table . ' SET ';
+            $statementParameters = $this->createUpdateStatementParameters($table, $values, $criteria);
 
-            $i = 0;
+            if ($statementParameters) {
 
-            foreach (array_keys($values) as $name) {
+                $sql = $statementParameters[0];
+                $bindParams = $statementParameters[1];
 
-                if (preg_match('/^[0-9]+$/', $name)) {
+                $stmt = $this->connection->prepare($sql);
 
-                    trigger_error('Unexpected numeric column name \'' . $name . '\' to update ' . $table, E_USER_WARNING);
-                    return;
-                } else {
+                if ($bindParams) {
 
-                    // TODO escape field name
-                    $setParts[] = $name . ' = :v' . $i;
-                }
+                    foreach ($bindParams as $key => $value) {
 
-                $i ++;
-            }
+                        if (is_array($value)) {
 
-            $sql .= implode(', ', $setParts);
+                            $stmt->bindValue($key, $value[0], $value[1]);
+                        } else {
 
-            if ($criteria) {
-
-                $whereParts = array();
-
-                $i = 0;
-
-                foreach ($criteria as $name => $value) {
-
-                    if (is_array($value)) {
-
-                        $paramNames = array();
-
-                        for ($j = 0; $j < count($value); $j ++) {
-
-                            $paramNames[] = ':c' . $i . '_' . $j;
+                            $stmt->bindValue($key, $value);
                         }
-
-                        $whereParts[] = '(' . $name . ' IN (' . implode(',', $paramNames) . '))';
-                    } else {
-
-                        $whereParts[] = '(' . $name . ' = :c' . $i . ')';
                     }
-
-                    $i ++;
                 }
 
-                $whereClause = implode(' AND ', $whereParts);
-
-                $sql .= ' WHERE ' . $whereClause;
+                $res = $stmt->execute();
             }
-
-            $stmt = $this->connection->prepare($sql);
-
-            $i = 0;
-
-            foreach ($values as $value) {
-
-                if (is_int($value) || is_float($value)) {
-
-                    $stmt->bindValue('v' . $i, $value, \PDO::PARAM_INT);
-                } else {
-
-                    $stmt->bindValue('v' . $i, $value);
-                }
-
-                $i ++;
-            }
-
-            if ($criteria) {
-
-                $i = 0;
-
-                foreach ($criteria as $value) {
-
-                    $stmt->bindValue('c' . $i, $value);
-
-                    $i ++;
-                }
-            }
-
-            $res = $stmt->execute();
         }
 
         return $res;
@@ -285,7 +201,7 @@ class DatabaseTableManager implements TableManager
 
                         $paramNames = array();
 
-                        for ($j = 0; $j < count($value); $j ++) {
+                        for ($j = 0; $j < count($value); $j++) {
 
                             $paramNames[] = ':c' . $i . '_' . $j;
                         }
@@ -296,7 +212,7 @@ class DatabaseTableManager implements TableManager
                         $whereParts[] = '(' . $name . ' = :c' . $i . ')';
                     }
 
-                    $i ++;
+                    $i++;
                 }
 
                 $whereClause = implode(' AND ', $whereParts);
@@ -325,7 +241,7 @@ class DatabaseTableManager implements TableManager
                                 $stmt->bindValue('c' . $i . '_' . $j, $val);
                             }
 
-                            $j ++;
+                            $j++;
                         }
                     } else if (is_int($value)) {
 
@@ -335,7 +251,7 @@ class DatabaseTableManager implements TableManager
                         $stmt->bindValue('c' . $i, $value);
                     }
 
-                    $i ++;
+                    $i++;
                 }
             }
 
@@ -352,44 +268,25 @@ class DatabaseTableManager implements TableManager
      */
     public function insertRecord($table, $record)
     {
+
         $res = null;
 
-        if ($record) {
+        $fields = array_keys($record);
 
-            $sql = 'INSERT INTO ' . $table . ' ';
+        $insertStatementParameters = $this->createInsertStatementParameters($table, $fields, array($record));
 
-            $names = array_keys($record);
-            $values = array_values($record);
+        if ($insertStatementParameters) {
 
-            $fieldParts = array();
-
-            foreach ($names as $name) {
-
-                // TODO escape field name
-                $fieldParts[] = $name;
-            }
-
-            $sql .= '(' . implode(',', $fieldParts) . ') VALUES ';
-
-            $valueParts = array();
-
-            foreach ($names as $i => $name) {
-
-                $value = $values[$i];
-
-                $valueParts[] = ':v' . $i;
-
-            }
-
-            $sql .= '(' . implode(',', $valueParts) . ')';
+            $sql = $insertStatementParameters[0];
+            $bindParams = $insertStatementParameters[1];
 
             $stmt = $this->connection->prepare($sql);
 
-            if ($record) {
+            if ($bindParams) {
 
-                foreach ($values as $i => $value) {
+                foreach ($bindParams as $key => $value) {
 
-                    $stmt->bindValue('v' . $i, $value);
+                    $stmt->bindValue($key, $value);
                 }
             }
 
@@ -450,10 +347,9 @@ class DatabaseTableManager implements TableManager
     {
 
         $this->columnDefinitions[$table] = $columnDefinitions;
-
     }
 
-    public function createSelectStatementParameters($table, $criteria = null, $fields = null, $orders = null)
+    public function createSelectStatementParameters($table, $criteria = null, $fields = null, $orders = null, $maxResults = null, $offset = null)
     {
 
         $parameters = array();
@@ -471,17 +367,13 @@ class DatabaseTableManager implements TableManager
                 if ($columnDefinition & self::COLUMN_DATE) {
 
                     $fieldParts[] = 'UNIX_TIMESTAMP(' . $column . ') AS ' . $column;
-
                 } else {
 
                     $fieldParts[] = $column;
-
                 }
-
             }
 
             $selectPart = implode(', ', $fieldParts);
-
         } else {
 
             $selectPart = '*';
@@ -497,9 +389,7 @@ class DatabaseTableManager implements TableManager
                 }
 
                 $selectPart = implode(', ', $fieldParts);
-
             }
-
         }
 
         $sql = 'SELECT ' . $selectPart . ' FROM ' . $table;
@@ -512,14 +402,78 @@ class DatabaseTableManager implements TableManager
 
             foreach ($criteria as $name => $value) {
 
-                $whereParts[] = '(' . $name . ' = :c' . $i . ')';
+                $field = $name;
+                $operator = '=';
+                $valueExpression = ':c' . $i;
 
-                $i ++;
+                if (is_object($value) && ($value instanceof CriteriumFieldComparison)) {
+
+                    $field = $value->getField();
+                    $operator = Criterium::getOperatorWhereClausePart($value->getOperator());
+
+                    $expression = $value->getExpression();
+                    if (is_object($expression) && ($expression instanceof \DateTime)) {
+
+                        $valueExpression = 'FROM_UNIXTIME(:c' . $i . ')';
+                    }
+                } else if (is_object($value) && ($value instanceof \DateTime)) {
+
+                    $valueExpression = 'FROM_UNIXTIME(:c' . $i . ')';
+                } else if (is_array($value)) {
+
+                    $operator = 'IN';
+
+                    $valueExpressionParts = array();
+
+                    for ($j = 0; $j < count($value); $j++) {
+
+                        $valueExpressionParts[] = ':c' . $i;
+
+                        if ($j != (count($value) - 1)) {
+                            $i++;
+                        }
+                    }
+
+                    $valueExpression = '(' . implode(',', $valueExpressionParts) . ')';
+                }
+
+                $whereParts[] = '(' . $field . ' ' . $operator . ' ' . $valueExpression . ')';
+
+                $i++;
             }
 
             $whereClause = implode(' AND ', $whereParts);
 
             $sql .= ' WHERE ' . $whereClause;
+        }
+
+        if ($orders) {
+
+            $orderByParts = array();
+
+            foreach ($orders as $order) {
+
+                if (is_string($order)) {
+
+                    $orderByParts[] = $order;
+                } else if (is_array($order)) {
+
+                    $field = $order[0];
+                    $direction = count($order) > 1 ? $order[1] : '';
+
+                    $orderByParts[] = $field . rtrim(' ' . $direction);
+                }
+            }
+
+            if ($orderByParts) {
+
+                $sql .= ' ORDER BY ' . implode(', ', $orderByParts);
+            }
+        }
+
+        if ($maxResults) {
+
+            $sql .= ' LIMIT ' . ($offset ? $offset . ',' : '') . $maxResults;
         }
 
         if ($criteria) {
@@ -528,17 +482,49 @@ class DatabaseTableManager implements TableManager
 
             foreach ($criteria as $value) {
 
-                $bindParams['c' . $i] = $value;
+                if (is_object($value) && ($value instanceof CriteriumFieldComparison)) {
 
-                $i ++;
+                    $value = $value->getExpression();
+
+                    if (is_object($value) && ($value instanceof \DateTime)) {
+
+                        $value = $value->getTimestamp();
+                    }
+
+                    $bindParams['c' . $i] = $value;
+                } else if (is_object($value) && ($value instanceof \DateTime)) {
+
+                    $value = $value->getTimestamp();
+
+                    $bindParams['c' . $i] = $value;
+                } else if (is_array($value)) {
+
+                    $values = array_values($value);
+
+                    for ($j = 0; $j < count($value); $j++) {
+
+                        $bindParams['c' . $i] = $values[$j];
+
+                        if ($j != (count($value) - 1)) {
+                            $i++;
+                        }
+                    }
+                } else {
+                    $bindParams['c' . $i] = $value;
+                }
+
+                $i++;
             }
         }
 
         $parameters[] = $sql;
         $parameters[] = $bindParams;
 
-        return $parameters;
+        // if ($table == 'bo_bridge_passage') {
+        //     var_dump($parameters);exit;
+        // }
 
+        return $parameters;
     }
 
     public function createInsertStatementParameters($table, $fields, $records)
@@ -574,20 +560,16 @@ class DatabaseTableManager implements TableManager
 
                     $values[] = 'FROM_UNIXTIME(:v' . $i . ')';
                     $bindParams['v' . $i] = $value->getTimestamp();
-
                 } else {
 
                     $values[] = ':v' . $i;
                     $bindParams['v' . $i] = $value;
-
                 }
 
                 $i++;
-
             }
 
             $valueParts[] = '(' . implode(', ', $values) . ')';
-
         }
 
         $sql .= implode(', ', $valueParts);
@@ -596,12 +578,11 @@ class DatabaseTableManager implements TableManager
         $parameters[] = $bindParams;
 
         return $parameters;
-
     }
 
     /**
      * @param string $table
-     * @param mixed[] 4values
+     * @param mixed[] $values
      * @param mixed[] $criteria
      */
     public function createUpdateStatementParameters($table, $values, $criteria = null)
@@ -614,20 +595,26 @@ class DatabaseTableManager implements TableManager
 
         $i = 0;
 
-        foreach (array_keys($values) as $name) {
+        foreach ($values as $name => $value) {
 
             if (preg_match('/^[0-9]+$/', $name)) {
 
                 trigger_error('Unexpected numeric column name \'' . $name . '\' to update ' . $table, E_USER_WARNING);
                 return;
-
             } else {
 
                 // TODO escape field name
-                $setParts[] = $name . ' = :v' . $i;
+
+                if (($value !== null) && is_object($value) && ($value instanceof \DateTime)) {
+
+                    $setParts[] = $name . ' = FROM_UNIXTIME(:v' . $i . ')';
+                } else {
+
+                    $setParts[] = $name . ' = :v' . $i;
+                }
             }
 
-            $i ++;
+            $i++;
         }
 
         $sql .= implode(', ', $setParts);
@@ -644,7 +631,7 @@ class DatabaseTableManager implements TableManager
 
                     $paramNames = array();
 
-                    for ($j = 0; $j < count($value); $j ++) {
+                    for ($j = 0; $j < count($value); $j++) {
 
                         $paramNames[] = ':c' . $i . '_' . $j;
                     }
@@ -655,13 +642,12 @@ class DatabaseTableManager implements TableManager
                     $whereParts[] = '(' . $name . ' = :c' . $i . ')';
                 }
 
-                $i ++;
+                $i++;
             }
 
             $whereClause = implode(' AND ', $whereParts);
 
             $sql .= ' WHERE ' . $whereClause;
-
         }
 
         $i = 0;
@@ -671,14 +657,15 @@ class DatabaseTableManager implements TableManager
             if (is_int($value) || is_float($value)) {
 
                 $bindParams['v' . $i] = array($value, \PDO::PARAM_INT);
+            } else if (($value !== null) && is_object($value) && ($value instanceof \DateTime)) {
 
+                $bindParams['v' . $i] = $value->getTimestamp();
             } else {
 
                 $bindParams['v' . $i] = $value;
-
             }
 
-            $i ++;
+            $i++;
         }
 
         if ($criteria) {
@@ -690,23 +677,18 @@ class DatabaseTableManager implements TableManager
                 if (is_int($value) || is_float($value)) {
 
                     $bindParams['c' . $i] = array($value, \PDO::PARAM_INT);
-
                 } else {
 
                     $bindParams['c' . $i] = $value;
-
                 }
 
-                $i ++;
+                $i++;
             }
-
         }
 
         $parameters[] = $sql;
         $parameters[] = $bindParams;
 
         return $parameters;
-
     }
-
 }
