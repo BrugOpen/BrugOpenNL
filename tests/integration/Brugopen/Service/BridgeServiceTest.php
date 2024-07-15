@@ -1,9 +1,8 @@
 <?php
-use BrugOpen\Datex\Service\DatexFileParser;
+
 use BrugOpen\Db\Service\MemoryTableManager;
 use BrugOpen\Geo\Model\LatLng;
 use BrugOpen\Service\BridgeService;
-use BrugOpen\Service\OperationService;
 use PHPUnit\Framework\TestCase;
 
 class BridgeServiceTest extends TestCase
@@ -72,7 +71,5 @@ class BridgeServiceTest extends TestCase
         $this->assertEquals('NL12345678', $record['isrs_code']);
         $this->assertEquals(52.1548, $record['ndw_lat']);
         $this->assertEquals(4.5137, $record['ndw_lng']);
-        
     }
-
 }
