@@ -23,15 +23,15 @@ class JourneyDataService
 
         $vessel = new Vessel();
         $vessel->setMmsi($jsonData['mmsi']);
-        $vessel->setName($jsonData['vesselName']);
-        $vessel->setCallsign($jsonData['vesselCallsign']);
+        $vessel->setName(isset($jsonData['vesselName']) ? $jsonData['vesselName'] : null);
+        $vessel->setCallsign(isset($jsonData['vesselCallsign']) ? $jsonData['vesselCallsign'] : null);
 
         if (array_key_exists('vesselDimensions', $jsonData)) {
 
             $vessel->setDimensions(new VesselDimensions($jsonData['vesselDimensions']));
         }
 
-        $vessel->setVesselType($jsonData['vesselType']);
+        $vessel->setVesselType(isset($jsonData['vesselType']) ? $jsonData['vesselType'] : null);
 
         $journey->setVessel($vessel);
 
@@ -82,7 +82,7 @@ class JourneyDataService
                     $passage->setDirection($passageData['direction']);
                 }
 
-                $passage->setVesselType($jsonData['vesselType']);
+                $passage->setVesselType(isset($jsonData['vesselType']) ? $jsonData['vesselType'] : null);
 
                 if (array_key_exists('operationId', $passageData)) {
 

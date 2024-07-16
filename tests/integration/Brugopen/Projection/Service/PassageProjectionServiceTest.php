@@ -155,7 +155,7 @@ END;
             $segment->setId($segmentId);
 
             $routePoints = array();
-            if ($values['routepoints']) {
+            if (isset($values['routepoints']) && $values['routepoints']) {
                 $routePoints[] = new LatLng($values['routepoints']);
             }
 
@@ -179,7 +179,7 @@ END;
 
             $connectedSegmentIds = array();
 
-            if ($values['connections']) {
+            if (isset($values['connections']) && $values['connections']) {
 
                 foreach (explode(',', $values['connections']) as $connectedSegmentId) {
                     $connectedSegmentIds[] = (int)$connectedSegmentId;
