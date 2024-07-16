@@ -119,7 +119,7 @@ class BridgeService
                     $bridge->setCity($row['city']);
                     $bridge->setCity2($row['city2']);
 
-                    if ($row['last_started_operation_id'] > 0) {
+                    if (isset($row['last_started_operation_id']) && ($row['last_started_operation_id'] > 0)) {
                         $bridge->setLastStartedOperationId((int)$row['last_started_operation_id']);
                     }
 
@@ -132,7 +132,7 @@ class BridgeService
                         $bridge->setLatLng($latLng);
                     }
 
-                    if ($row['connected_segments']) {
+                    if (isset($row['connected_segments']) && $row['connected_segments']) {
 
                         $connectedSegmentIds = array();
 
@@ -154,15 +154,15 @@ class BridgeService
                         $bridge->setConnectedSegmentIds($connectedSegmentIds);
                     }
 
-                    if ($row['clearance']) {
+                    if (isset($row['clearance']) && $row['clearance']) {
                         $bridge->setClearance((float)$row['clearance']);
                     }
 
-                    $bridge->setAnnounceApproaches($row['announce_approach']);
+                    $bridge->setAnnounceApproaches(isset($row['announce_approach']) ? $row['announce_approach'] : null);
 
                     $active = null;
 
-                    if ($row['active'] != '') {
+                    if (isset($row['active']) && ($row['active'] != '')) {
 
                         $active = (bool) $row['active'];
                     }
