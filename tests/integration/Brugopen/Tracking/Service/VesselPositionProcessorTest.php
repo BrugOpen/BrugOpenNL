@@ -116,7 +116,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::INFO));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -210,7 +210,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::INFO));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -305,7 +305,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::INFO));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -440,7 +440,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -591,7 +591,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -726,7 +726,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -940,7 +940,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -1140,7 +1140,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -1303,7 +1303,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
@@ -1426,7 +1426,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // create a log channel
         $log = new \Monolog\Logger('BrugOpen.VesselPositionProcessor');
-        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::DEBUG));
+        $log->pushHandler(new \Monolog\Handler\StreamHandler('php://stderr', \Monolog\Logger::CRITICAL));
 
         $processor->setLog($log);
 
