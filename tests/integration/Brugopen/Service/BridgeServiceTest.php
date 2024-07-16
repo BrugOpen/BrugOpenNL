@@ -1,5 +1,7 @@
 <?php
 
+namespace BrugOpen\Service;
+
 use BrugOpen\Db\Service\MemoryTableManager;
 use BrugOpen\Geo\Model\LatLng;
 use BrugOpen\Service\BridgeService;
