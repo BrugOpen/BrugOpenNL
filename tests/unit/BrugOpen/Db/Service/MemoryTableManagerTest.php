@@ -289,7 +289,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertNotEquals(2, $record['id']);
-
         }
 
         // comparison 'less than'
@@ -303,7 +302,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] < 4);
-
         }
 
         // comparison 'less than or equal'
@@ -317,7 +315,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] <= 4);
-
         }
 
         // comparison 'greater than'
@@ -331,7 +328,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] > 4);
-
         }
 
         // comparison 'greater than or equals'
@@ -345,9 +341,7 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] >= 4);
-
         }
-
     }
 
     public function testFindRecordsWithComparisonCriteriumDateTime()
@@ -424,7 +418,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertNotEquals(2, $record['id']);
-
         }
 
         // comparison 'less than'
@@ -438,7 +431,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] < 4);
-
         }
 
         // comparison 'less than or equal'
@@ -452,7 +444,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] <= 4);
-
         }
 
         // comparison 'greater than'
@@ -466,7 +457,6 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] > 4);
-
         }
 
         // comparison 'greater than or equals'
@@ -480,9 +470,7 @@ class MemoryTableManagerTest extends TestCase
         foreach ($records as $record) {
 
             $this->assertTrue($record['id'] >= 4);
-
         }
-
     }
 
     public function testFindRecordsWithOrdering()

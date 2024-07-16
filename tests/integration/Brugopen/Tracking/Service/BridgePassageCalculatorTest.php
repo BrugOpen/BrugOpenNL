@@ -54,7 +54,6 @@ class BridgePassageCalculatorTest extends TestCase
             foreach ($segmentData['polygon'] as $point) {
 
                 $polygonPoints[] = new LatLng($point);
-
             }
 
             $segment->setPolygon(new Polygon($polygonPoints));
@@ -64,7 +63,6 @@ class BridgePassageCalculatorTest extends TestCase
             foreach ($segmentData['routePoints'] as $point) {
 
                 $routePoints[] = new LatLng($point);
-
             }
 
             $segment->setRoutePoints($routePoints);
@@ -72,11 +70,9 @@ class BridgePassageCalculatorTest extends TestCase
             $segment->setConnectedSegmentIds($segmentData['connectedSegmentIds']);
 
             $waterwaySegments[$segmentId] = $segment;
-
         }
 
         return $waterwaySegments;
-
     }
 
     public function createBridges()
@@ -87,7 +83,7 @@ class BridgePassageCalculatorTest extends TestCase
         $bridge = new Bridge();
         $bridge->setId(90);
         $bridge->setTitle('Hefbrug Boskoop');
-        $bridge->setLatLng(new LatLng(52.074272,4.660209));
+        $bridge->setLatLng(new LatLng(52.074272, 4.660209));
         $bridge->setConnectedSegmentIds(array(4 => 147, 184 => 148));
 
         $bridges[$bridge->getId()] = $bridge;
@@ -95,13 +91,12 @@ class BridgePassageCalculatorTest extends TestCase
         $bridge = new Bridge();
         $bridge->setId(77);
         $bridge->setTitle('Hefbrug Gouwsluis');
-        $bridge->setLatLng(new LatLng(52.11753,4.673765));
+        $bridge->setLatLng(new LatLng(52.11753, 4.673765));
         $bridge->setConnectedSegmentIds(array(17 => 138, 197 => 139));
 
         $bridges[$bridge->getId()] = $bridge;
 
         return $bridges;
-
     }
 
     public function testDetectBridgePassagesConnectedSegmentsWithoutConnectingBridge()
@@ -117,7 +112,7 @@ class BridgePassageCalculatorTest extends TestCase
         // entering journey segment somewhere in 137:
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(137);
-        $enteringJourneySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $enteringJourneySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // exiting journey segment
         $exitingJourneySegment = new JourneySegment();
@@ -133,7 +128,6 @@ class BridgePassageCalculatorTest extends TestCase
         $bridgePassages = $passageCalculator->determineBridgePassages($exitingJourneySegment, $enteringJourneySegment, $previousJourneySegments);
 
         $this->assertCount(0, $bridgePassages);
-
     }
 
     public function testDetectBridgePassagesConnectedSegmentsWithConnectingBridge()
@@ -178,7 +172,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(77, $bridgePassage->getBridgeId());
         $this->assertEquals(197, $bridgePassage->getDirection());
         $this->assertNull($bridgePassage->getDatetimePassage());
-
     }
 
     public function testDetectBridgePassagesConnectedSegmentsWithConnectingBridgeAndTimestamp()
@@ -195,13 +188,13 @@ class BridgePassageCalculatorTest extends TestCase
         $exitingJourneySegment = new JourneySegment();
         $exitingJourneySegment->setSegmentId(138);
         $exitingJourneySegment->setLastTimestamp(1692268500);
-        $exitingJourneySegment->setLastLocation(new LatLng(52.118004,4.673939));
+        $exitingJourneySegment->setLastLocation(new LatLng(52.118004, 4.673939));
 
         // entering journey segment somewhere in 139
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(139);
         $enteringJourneySegment->setFirstTimestamp(1692268560);
-        $enteringJourneySegment->setFirstLocation(new LatLng(52.115088,4.672732));
+        $enteringJourneySegment->setFirstLocation(new LatLng(52.115088, 4.672732));
 
         // previous journey segments were 135 - 137
         $previousJourneySegments = array();
@@ -228,7 +221,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(197, $bridgePassage->getDirection());
         $this->assertNotNull($bridgePassage->getDatetimePassage());
         $this->assertEquals(1692268510, $bridgePassage->getDatetimePassage()->getTimestamp());
-
     }
 
     public function testDetectBridgePassagesSkippingOneSegmentWithConnectingBridge()
@@ -244,12 +236,12 @@ class BridgePassageCalculatorTest extends TestCase
         // entering journey segment somewhere in 139
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(139);
-        $enteringJourneySegment->setFirstLocation(new LatLng(52.115088,4.672732));
+        $enteringJourneySegment->setFirstLocation(new LatLng(52.115088, 4.672732));
 
         // exiting journey segment
         $exitingJourneySegment = new JourneySegment();
         $exitingJourneySegment->setSegmentId(137);
-        $exitingJourneySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $exitingJourneySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // previous journey segments were 135 - 136
         $previousJourneySegments = array();
@@ -271,7 +263,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(77, $bridgePassage->getBridgeId());
         $this->assertEquals(197, $bridgePassage->getDirection());
         $this->assertNull($bridgePassage->getDatetimePassage());
-
     }
 
     public function testDetectBridgePassagesSkippingOneSegmentWithConnectingBridgeWithTimestamp()
@@ -288,13 +279,13 @@ class BridgePassageCalculatorTest extends TestCase
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(139);
         $enteringJourneySegment->setFirstTimestamp(1692268560);
-        $enteringJourneySegment->setFirstLocation(new LatLng(52.115088,4.672732));
+        $enteringJourneySegment->setFirstLocation(new LatLng(52.115088, 4.672732));
 
         // exiting journey segment
         $exitingJourneySegment = new JourneySegment();
         $exitingJourneySegment->setSegmentId(137);
         $exitingJourneySegment->setLastTimestamp(1692268460);
-        $exitingJourneySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $exitingJourneySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // previous journey segments were 135 - 136
         $previousJourneySegments = array();
@@ -317,7 +308,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(197, $bridgePassage->getDirection());
         $this->assertNotNull($bridgePassage->getDatetimePassage());
         $this->assertEquals(1692268497, $bridgePassage->getDatetimePassage()->getTimestamp());
-
     }
 
     public function testDetectBridgePassagesSkippingTwoSegmentsWithConnectingBridge()
@@ -333,12 +323,12 @@ class BridgePassageCalculatorTest extends TestCase
         // entering journey segment somewhere in 140
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(140);
-        $enteringJourneySegment->setFirstLocation(new LatLng(52.114169,4.672116));
+        $enteringJourneySegment->setFirstLocation(new LatLng(52.114169, 4.672116));
 
         // exiting journey segment
         $exitingJourneySegment = new JourneySegment();
         $exitingJourneySegment->setSegmentId(137);
-        $exitingJourneySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $exitingJourneySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // previous journey segments were 135 - 136
         $previousJourneySegments = array();
@@ -360,7 +350,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(77, $bridgePassage->getBridgeId());
         $this->assertEquals(197, $bridgePassage->getDirection());
         $this->assertNull($bridgePassage->getDatetimePassage());
-
     }
 
     public function testDetectBridgePassagesSkippingTwoSegmentsWithConnectingBridgeWithTimestamp()
@@ -376,14 +365,14 @@ class BridgePassageCalculatorTest extends TestCase
         // entering journey segment somewhere in 140
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(140);
-        $enteringJourneySegment->setFirstLocation(new LatLng(52.114169,4.672116));
+        $enteringJourneySegment->setFirstLocation(new LatLng(52.114169, 4.672116));
         $enteringJourneySegment->setFirstTimestamp(1692268580);
 
         // exiting journey segment
         $exitingJourneySegment = new JourneySegment();
         $exitingJourneySegment->setSegmentId(137);
         $exitingJourneySegment->setLastTimestamp(1692268460);
-        $exitingJourneySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $exitingJourneySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // previous journey segments were 135 - 136
         $previousJourneySegments = array();
@@ -406,7 +395,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(197, $bridgePassage->getDirection());
         $this->assertNotNull($bridgePassage->getDatetimePassage());
         $this->assertEquals(1692268495, $bridgePassage->getDatetimePassage()->getTimestamp());
-
     }
 
     public function testDetectBridgePassagesSkippingMultipleSegmentsWithTwoConnectingBridgesWithTimestamps()
@@ -422,7 +410,7 @@ class BridgePassageCalculatorTest extends TestCase
         // entering journey segment somewhere in 149
         $enteringJourneySegment = new JourneySegment();
         $enteringJourneySegment->setSegmentId(149);
-        $enteringJourneySegment->setFirstLocation(new LatLng(52.068156,4.659187));
+        $enteringJourneySegment->setFirstLocation(new LatLng(52.068156, 4.659187));
         $enteringJourneySegment->setFirstTimestamp(1692183223); // 12:53:43
 
         // moving at around 4.2 m/s (15.1km/h) => 1423 seconds for 5975 meter
@@ -431,7 +419,7 @@ class BridgePassageCalculatorTest extends TestCase
         $exitingJourneySegment = new JourneySegment();
         $exitingJourneySegment->setSegmentId(137);
         $exitingJourneySegment->setLastTimestamp(1692181800); // 12:30:00
-        $exitingJourneySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $exitingJourneySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // previous journey segments were 135 - 136
         $previousJourneySegments = array();
@@ -461,7 +449,6 @@ class BridgePassageCalculatorTest extends TestCase
         $this->assertEquals(184, $bridgePassage->getDirection());
         $this->assertNotNull($bridgePassage->getDatetimePassage());
         $this->assertEquals(1692183054, $bridgePassage->getDatetimePassage()->getTimestamp());
-
     }
 
     public function testCalculatePassageTimeZeroEnteringDistance()
@@ -492,7 +479,5 @@ class BridgePassageCalculatorTest extends TestCase
 
         $this->assertNotNull($passageTime);
         $this->assertEquals(1689316712, $passageTime);
-
     }
-
 }

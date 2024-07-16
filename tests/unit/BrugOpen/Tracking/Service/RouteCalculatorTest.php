@@ -54,7 +54,6 @@ class RouteCalculatorTest extends TestCase
             foreach ($segmentData['polygon'] as $point) {
 
                 $polygonPoints[] = new LatLng($point);
-
             }
 
             $segment->setPolygon(new Polygon($polygonPoints));
@@ -64,7 +63,6 @@ class RouteCalculatorTest extends TestCase
             foreach ($segmentData['routePoints'] as $point) {
 
                 $routePoints[] = new LatLng($point);
-
             }
 
             $segment->setRoutePoints($routePoints);
@@ -72,11 +70,9 @@ class RouteCalculatorTest extends TestCase
             $segment->setConnectedSegmentIds($segmentData['connectedSegmentIds']);
 
             $waterwaySegments[$segmentId] = $segment;
-
         }
 
         return $waterwaySegments;
-
     }
 
     public function testCalculateRouteConnectingSegments()
@@ -90,7 +86,7 @@ class RouteCalculatorTest extends TestCase
         // new journey segment somewhere in 137:
         $journeySegment = new JourneySegment();
         $journeySegment->setSegmentId(137);
-        $journeySegment->setLastLocation(new LatLng(52.118955,4.674364));
+        $journeySegment->setLastLocation(new LatLng(52.118955, 4.674364));
 
         // previous journey segments were 135 and 136
         $previousJourneySegments = array();
@@ -108,7 +104,6 @@ class RouteCalculatorTest extends TestCase
         $this->assertNotEmpty($calculatedRoute);
         $this->assertCount(1, $calculatedRoute);
         $this->assertEquals(137, $calculatedRoute[0]->getSegmentId());
-
     }
 
     public function testCalculateRouteSkippedOneSegment()
@@ -128,14 +123,14 @@ class RouteCalculatorTest extends TestCase
 
         $previousSegment = new JourneySegment();
         $previousSegment->setSegmentId(136);
-        $previousSegment->setLastLocation(new LatLng(52.119647,4.671767));
+        $previousSegment->setLastLocation(new LatLng(52.119647, 4.671767));
 
         $previousSegments[] = $previousSegment;
 
         // new journey segment somewhere in 138:
         $journeySegment = new JourneySegment();
         $journeySegment->setSegmentId(138);
-        $journeySegment->setFirstLocation(new LatLng(52.117754,4.673811));
+        $journeySegment->setFirstLocation(new LatLng(52.117754, 4.673811));
 
         $calculatedRoute = $routeCalculator->calculateRoute($journeySegment, $previousSegments);
 
@@ -154,7 +149,6 @@ class RouteCalculatorTest extends TestCase
         // no time must be set
         $this->assertEmpty($calculatedRoute[0]->getFirstTimestamp());
         $this->assertEmpty($calculatedRoute[0]->getLastTimestamp());
-
     }
 
     public function testCalculateRouteSkippedOneSegmentWithTimestamps()
@@ -177,7 +171,7 @@ class RouteCalculatorTest extends TestCase
 
         $previousSegment = new JourneySegment();
         $previousSegment->setSegmentId(136);
-        $previousSegment->setLastLocation(new LatLng(52.119647,4.671767));
+        $previousSegment->setLastLocation(new LatLng(52.119647, 4.671767));
         $previousSegment->setLastTimestamp(1692181800); // 12:30:00
 
         $previousSegments[] = $previousSegment;
@@ -187,7 +181,7 @@ class RouteCalculatorTest extends TestCase
         // new journey segment somewhere in 138:
         $journeySegment = new JourneySegment();
         $journeySegment->setSegmentId(138);
-        $journeySegment->setFirstLocation(new LatLng(52.117754,4.673811));
+        $journeySegment->setFirstLocation(new LatLng(52.117754, 4.673811));
         $journeySegment->setFirstTimestamp(1692181880); // 12:31:20
 
         $calculatedRoute = $routeCalculator->calculateRoute($journeySegment, $previousSegments);
@@ -234,7 +228,6 @@ class RouteCalculatorTest extends TestCase
 
         $this->assertEquals(1692181842, $calculatedRoute[0]->getFirstTimestamp());
         $this->assertEquals(1692181842, $calculatedRoute[0]->getLastTimestamp());
-
     }
 
     public function testCalculateRouteSkippedTwoSegments()
@@ -278,7 +271,6 @@ class RouteCalculatorTest extends TestCase
         // first and last location must be equal
         $this->assertEquals($calculatedRoute[0]->getFirstLocation(), $calculatedRoute[0]->getLastLocation());
         $this->assertEquals($calculatedRoute[1]->getFirstLocation(), $calculatedRoute[1]->getLastLocation());
-
     }
 
     public function testCalculateRouteSkippedTwoSegmentsWithTimestamps()
@@ -298,7 +290,7 @@ class RouteCalculatorTest extends TestCase
 
         $previousSegment = new JourneySegment();
         $previousSegment->setSegmentId(136);
-        $previousSegment->setLastLocation(new LatLng(52.119647,4.671767));
+        $previousSegment->setLastLocation(new LatLng(52.119647, 4.671767));
         $previousSegment->setLastTimestamp(1692181800); // 12:30:00
         $previousSegments[] = $previousSegment;
 
@@ -307,7 +299,7 @@ class RouteCalculatorTest extends TestCase
         // new journey segment somewhere in 139:
         $journeySegment = new JourneySegment();
         $journeySegment->setSegmentId(139);
-        $journeySegment->setFirstLocation(new LatLng(52.1152,4.672738));
+        $journeySegment->setFirstLocation(new LatLng(52.1152, 4.672738));
         $journeySegment->setFirstTimestamp(1692181950); // 12:32:30
 
         $calculatedRoute = $routeCalculator->calculateRoute($journeySegment, $previousSegments);
@@ -368,7 +360,6 @@ class RouteCalculatorTest extends TestCase
 
         $this->assertEquals(1692181865, $calculatedRoute[1]->getFirstTimestamp());
         $this->assertEquals(1692181865, $calculatedRoute[1]->getLastTimestamp());
-
     }
 
     public function testCalculateRouteSkippedMultipleSegmentsWithTimestamps()
@@ -388,7 +379,7 @@ class RouteCalculatorTest extends TestCase
 
         $previousSegment = new JourneySegment();
         $previousSegment->setSegmentId(136);
-        $previousSegment->setLastLocation(new LatLng(52.119647,4.671767));
+        $previousSegment->setLastLocation(new LatLng(52.119647, 4.671767));
         $previousSegment->setLastTimestamp(1692181800); // 12:30:00
         $previousSegments[] = $previousSegment;
 
@@ -397,7 +388,7 @@ class RouteCalculatorTest extends TestCase
         // new journey segment somewhere in 149:
         $journeySegment = new JourneySegment();
         $journeySegment->setSegmentId(149);
-        $journeySegment->setFirstLocation(new LatLng(52.068156,4.659187));
+        $journeySegment->setFirstLocation(new LatLng(52.068156, 4.659187));
         $journeySegment->setFirstTimestamp(1692183223); // 12:53:43
 
         $calculatedRoute = $routeCalculator->calculateRoute($journeySegment, $previousSegments);
@@ -446,7 +437,6 @@ class RouteCalculatorTest extends TestCase
         foreach ($calculatedRoute as $routeSegment) {
 
             $path[] = $routeSegment->getFirstLocation();
-
         }
 
         $polyLine = new Polyline($path);
@@ -477,7 +467,6 @@ class RouteCalculatorTest extends TestCase
 
         $this->assertEquals(1692181865, $calculatedRoute[1]->getFirstTimestamp());
         $this->assertEquals(1692181865, $calculatedRoute[1]->getLastTimestamp());
-
     }
 
     public function testFindShortestRouteOneHop()
@@ -496,7 +485,6 @@ class RouteCalculatorTest extends TestCase
 
         $this->assertEquals(135, $route[0]);
         $this->assertEquals(136, $route[1]);
-
     }
 
     public function testFindShortestRouteTwoHops()
@@ -516,7 +504,6 @@ class RouteCalculatorTest extends TestCase
         $this->assertEquals(135, $route[0]);
         $this->assertEquals(136, $route[1]);
         $this->assertEquals(137, $route[2]);
-
     }
 
     public function testFindShortestRouteThreeHops()
@@ -537,7 +524,6 @@ class RouteCalculatorTest extends TestCase
         $this->assertEquals(136, $route[1]);
         $this->assertEquals(137, $route[2]);
         $this->assertEquals(138, $route[3]);
-
     }
 
     public function testFindShortestRouteFourHops()
@@ -559,7 +545,5 @@ class RouteCalculatorTest extends TestCase
         $this->assertEquals(464, $route[2]);
         $this->assertEquals(465, $route[3]);
         $this->assertEquals(466, $route[4]);
-
     }
-
 }

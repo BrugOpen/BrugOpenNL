@@ -20,7 +20,6 @@ class DatabaseTableManagerTest extends TestCase
 
         $this->assertEquals('SELECT * FROM foo_table', $parameters[0]);
         $this->assertEmpty($parameters[1]);
-
     }
 
     public function testCreateSelectStatementParametersWithOneCriterium()
@@ -41,7 +40,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(1, $parameters[1]);
         $this->assertArrayHasKey('c0', $parameters[1]);
         $this->assertEquals('bar', $parameters[1]['c0']);
-
     }
 
     public function testCreateSelectStatementParametersWithTwoCriteria()
@@ -65,7 +63,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertEquals('bar1', $parameters[1]['c0']);
         $this->assertArrayHasKey('c1', $parameters[1]);
         $this->assertEquals('bar2', $parameters[1]['c1']);
-
     }
 
 
@@ -162,7 +159,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(1, $parameters[1]);
         $this->assertArrayHasKey('c0', $parameters[1]);
         $this->assertEquals(4, $parameters[1]['c0']);
-
     }
 
     public function testCreateSelectStatementParametersWithComparisonCriteriumDateTime()
@@ -258,7 +254,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(1, $parameters[1]);
         $this->assertArrayHasKey('c0', $parameters[1]);
         $this->assertEquals(1674208800, $parameters[1]['c0']);
-
     }
 
     public function testCreateSelectStatementParametersWholeTableWithDateMapping()
@@ -279,7 +274,6 @@ class DatabaseTableManagerTest extends TestCase
 
         $this->assertEquals('SELECT id, UNIX_TIMESTAMP(date_start) AS date_start FROM sometable', $parameters[0]);
         $this->assertEmpty($parameters[1]);
-
     }
 
     public function testCreateSelectStatementParametersWholeTableWithDateTimeMapping()
@@ -300,7 +294,6 @@ class DatabaseTableManagerTest extends TestCase
 
         $this->assertEquals('SELECT id, UNIX_TIMESTAMP(datetime_start) AS datetime_start FROM sometable', $parameters[0]);
         $this->assertEmpty($parameters[1]);
-
     }
 
     public function testCreateInsertStatementParametersSingleRecord()
@@ -318,7 +311,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(2, $parameters[1]);
         $this->assertEquals('foo', $parameters[1]['v0']);
         $this->assertEquals('bar', $parameters[1]['v1']);
-
     }
 
     public function testCreateInsertStatementParametersTwoRecords()
@@ -338,7 +330,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertEquals('bar', $parameters[1]['v1']);
         $this->assertEquals('foo2', $parameters[1]['v2']);
         $this->assertEquals('bar2', $parameters[1]['v3']);
-
     }
 
     public function testCreateInsertStatementParametersDateValue()
@@ -346,7 +337,7 @@ class DatabaseTableManagerTest extends TestCase
 
         $tableManager = new DatabaseTableManager(null);
 
-        $time1 = mktime(0,0,0,12,31,2020);
+        $time1 = mktime(0, 0, 0, 12, 31, 2020);
 
         $parameters = $tableManager->createInsertStatementParameters('foo_table', array('field1', 'field2'), array(array('foo', new \DateTime('@' . $time1))));
 
@@ -358,7 +349,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(2, $parameters[1]);
         $this->assertEquals('foo', $parameters[1]['v0']);
         $this->assertEquals($time1, $parameters[1]['v1']);
-
     }
 
     public function testCreateInsertStatementParametersDateValues()
@@ -366,8 +356,8 @@ class DatabaseTableManagerTest extends TestCase
 
         $tableManager = new DatabaseTableManager(null);
 
-        $time1 = mktime(0,0,0,12,31,2020);
-        $time2 = mktime(0,0,0,12,31,2021);
+        $time1 = mktime(0, 0, 0, 12, 31, 2020);
+        $time2 = mktime(0, 0, 0, 12, 31, 2021);
 
         $parameters = $tableManager->createInsertStatementParameters('foo_table', array('field1', 'field2'), array(array(new \DateTime('@' . $time1), new \DateTime('@' . $time2))));
 
@@ -379,7 +369,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(2, $parameters[1]);
         $this->assertEquals($time1, $parameters[1]['v0']);
         $this->assertEquals($time2, $parameters[1]['v1']);
-
     }
 
     public function testCreateUpdateStatementParametersNoCriteria()
@@ -397,7 +386,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(2, $parameters[1]);
         $this->assertEquals('value1', $parameters[1]['v0']);
         $this->assertEquals('value2', $parameters[1]['v1']);
-
     }
 
     public function testCreateUpdateStatementParametersNoCriteriaIntValue()
@@ -425,7 +413,6 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertCount(2, $parameters[1]['v2']);
         $this->assertEquals(1.2, $parameters[1]['v2'][0]);
         $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['v2'][1]);
-
     }
 
     public function testCreateUpdateStatementParametersWithCriteria()
@@ -470,6 +457,5 @@ class DatabaseTableManagerTest extends TestCase
         $this->assertEquals(\PDO::PARAM_INT, $parameters[1]['c0'][1]);
 
         $this->assertEquals('foo', $parameters[1]['c1']);
-
     }
 }

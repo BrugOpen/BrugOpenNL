@@ -57,7 +57,6 @@ class VesselPositionProcessorTest extends TestCase
         $segmentBounds = $processor->getWaterwaySegmentBounds();
 
         $this->assertCount(2, $segmentBounds);
-
     }
 
     public function testProcessVesselPositionOutsideSegments()
@@ -93,7 +92,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // process AISRecord
-        $latLng = new LatLng(52.1463504,4.5043949);
+        $latLng = new LatLng(52.1463504, 4.5043949);
 
         $aisRecord = new AISRecord();
         $aisRecord->setLocation($latLng);
@@ -107,7 +106,6 @@ class VesselPositionProcessorTest extends TestCase
         // assert no active journeys
 
         $this->assertCount(0, $processor->getCurrentJourneys());
-
     }
 
     public function testProcessVesselPositionInSegmentNewJourneyStart()
@@ -149,7 +147,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -202,7 +200,6 @@ class VesselPositionProcessorTest extends TestCase
 
         // assert 1 active journey
         $this->assertCount(1, $processor->getCurrentJourneys());
-
     }
 
     public function testProcessVesselPositionInSegmentJourneyUpdate()
@@ -240,7 +237,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->initalizeWaterwaySegments($segments);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -257,7 +254,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // second point is in segment 2
-        $latLng2 = new LatLng(52.141101,4.4882);
+        $latLng2 = new LatLng(52.141101, 4.4882);
 
         // create second AISRecord
         $aisRecord = new AISRecord();
@@ -298,7 +295,6 @@ class VesselPositionProcessorTest extends TestCase
 
         // assert 1 active journey
         $this->assertCount(1, $processor->getCurrentJourneys());
-
     }
 
     public function testProcessVesselPositionInSecondSegmentJourneyUpdate()
@@ -336,7 +332,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->initalizeWaterwaySegments($segments);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -349,7 +345,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->processVesselPosition($aisRecord);
 
         // second point is also in segment 2
-        $latLng2 = new LatLng(52.141101,4.4882);
+        $latLng2 = new LatLng(52.141101, 4.4882);
 
         // create second AISRecord
         $aisRecord = new AISRecord();
@@ -364,7 +360,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // third point is in segment 1 on other side of bridge
-        $latLng3 = new LatLng(52.140416,4.486638);
+        $latLng3 = new LatLng(52.140416, 4.486638);
 
         // create third AISRecord
         $aisRecord = new AISRecord();
@@ -434,7 +430,6 @@ class VesselPositionProcessorTest extends TestCase
 
         // check waterway segments
         $this->assertCount(2, $currentJourneys['12345678']->getJourneySegments());
-
     }
 
     public function testProcessVesselPositionJourneyUpdateAfterMovingOutOfKnownSegmentsOnJourneyWithOneSegment()
@@ -476,7 +471,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -532,7 +527,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // now process new record that is not in any known segment
 
-        $latLng2 = new LatLng(52.1459816,4.503645);
+        $latLng2 = new LatLng(52.1459816, 4.503645);
 
         $this->assertFalse($segments[0]->getPolygon()->isPointInPolygon($latLng2));
         $this->assertFalse($segments[1]->getPolygon()->isPointInPolygon($latLng2));
@@ -586,7 +581,6 @@ class VesselPositionProcessorTest extends TestCase
 
         // assert 0 ended journeys
         $this->assertCount(0, $processor->getEndedJourneys());
-
     }
 
     public function testProcessVesselPositionJourneyEndAfterMovingOutOfKnownSegmentsOnJourneyWithTwoSegments()
@@ -628,7 +622,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -641,7 +635,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->processVesselPosition($aisRecord);
 
         // second point is in segment 1 on other side of bridge
-        $latLng2 = new LatLng(52.140416,4.486638);
+        $latLng2 = new LatLng(52.140416, 4.486638);
 
         // create second AISRecord
         $aisRecord = new AISRecord();
@@ -662,7 +656,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // now process new record that is not in any known segment
 
-        $latLng3 = new LatLng(52.1459816,4.503645);
+        $latLng3 = new LatLng(52.1459816, 4.503645);
 
         $this->assertFalse($segments[0]->getPolygon()->isPointInPolygon($latLng3));
         $this->assertFalse($segments[1]->getPolygon()->isPointInPolygon($latLng3));
@@ -722,7 +716,6 @@ class VesselPositionProcessorTest extends TestCase
 
         // assert 1 ended journey
         $this->assertCount(1, $processor->getEndedJourneys());
-
     }
 
     public function testProcessVesselPositionFlapBetweenTwoSegments()
@@ -764,7 +757,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -777,7 +770,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->processVesselPosition($aisRecord);
 
         // second point is in segment 1 on other side of bridge
-        $latLng2 = new LatLng(52.140416,4.486638);
+        $latLng2 = new LatLng(52.140416, 4.486638);
 
         // create second AISRecord
         $aisRecord = new AISRecord();
@@ -937,7 +930,6 @@ class VesselPositionProcessorTest extends TestCase
 
         // assert 0 ended journeys
         $this->assertCount(0, $processor->getEndedJourneys());
-
     }
 
     public function testProcessVesselPositionExitAfterFlapping()
@@ -979,7 +971,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first point is in segment 2
-        $latLng1 = new LatLng(52.141832,4.490018);
+        $latLng1 = new LatLng(52.141832, 4.490018);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -992,7 +984,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->processVesselPosition($aisRecord);
 
         // second point is in segment 1 on other side of bridge
-        $latLng2 = new LatLng(52.140416,4.486638);
+        $latLng2 = new LatLng(52.140416, 4.486638);
 
         // create second AISRecord
         $aisRecord = new AISRecord();
@@ -1084,7 +1076,7 @@ class VesselPositionProcessorTest extends TestCase
 
         // now process new record that is not in any known segment
 
-        $latLng3 = new LatLng(52.1459816,4.503645);
+        $latLng3 = new LatLng(52.1459816, 4.503645);
 
         $this->assertFalse($segments[0]->getPolygon()->isPointInPolygon($latLng3));
         $this->assertFalse($segments[1]->getPolygon()->isPointInPolygon($latLng3));
@@ -1138,7 +1130,6 @@ class VesselPositionProcessorTest extends TestCase
         $this->assertEquals($latLng1, $journeyEvent->getJourney()->getLastLocation());
         $this->assertEquals(1691936021, $journeyEvent->getJourney()->getFirstTimestamp());
         $this->assertEquals(1691936201, $journeyEvent->getJourney()->getLastTimestamp());
-
     }
 
     public function testProcessVesselPositionNewSegmentAfterLongPeriodInSingleSegment()
@@ -1217,7 +1208,7 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // new point is in segment 182
-        $latLng1 = new LatLng(51.91593,4.578495);
+        $latLng1 = new LatLng(51.91593, 4.578495);
 
         $this->assertTrue($segment->getPolygon()->isPointInPolygon($latLng1));
 
@@ -1302,7 +1293,6 @@ class VesselPositionProcessorTest extends TestCase
         $this->assertEquals(1672527389, $endedSegments[0]->getFirstTimestamp());
         $this->assertEquals(new LatLng("51.91725,4.57941"), $endedSegments[0]->getLastLocation());
         $this->assertEquals(1672721709, $endedSegments[0]->getLastTimestamp());
-
     }
 
     public function testProcessVesselPositionNewJourneyAfterLongPeriodInSingleSegmentTooLongAgo()
@@ -1352,14 +1342,14 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first points are in segment 242
-        $latLng1 = new LatLng(52.192218333333,4.5077533333333);
-        $latLng2 = new LatLng(52.192208333333,4.507775);
+        $latLng1 = new LatLng(52.192218333333, 4.5077533333333);
+        $latLng2 = new LatLng(52.192208333333, 4.507775);
 
         $this->assertTrue($segments[1]->getPolygon()->isPointInPolygon($latLng1));
         $this->assertTrue($segments[1]->getPolygon()->isPointInPolygon($latLng2));
 
         // third point is in segment 100
-        $latLng3 = new LatLng(52.144028333333,4.4972733333333);
+        $latLng3 = new LatLng(52.144028333333, 4.4972733333333);
         $this->assertTrue($segments[0]->getPolygon()->isPointInPolygon($latLng3));
 
         // create and process first AISRecord
@@ -1426,7 +1416,6 @@ class VesselPositionProcessorTest extends TestCase
         $this->assertEquals($latLng3, $currentJourneySegments[0]->getLastLocation());
         $this->assertEquals(1672737478, $currentJourneySegments[0]->getFirstTimestamp());
         $this->assertEquals(1672737478, $currentJourneySegments[0]->getLastTimestamp());
-
     }
 
     public function testJourneyTimeoutBetweenTwoKnownSegments()
@@ -1489,15 +1478,15 @@ class VesselPositionProcessorTest extends TestCase
         $processor->setEventDispatcher($eventDispatcher);
 
         // first point is in segment 19
-        $latLng1 = new LatLng(52.099062536718,4.4229810095111);
+        $latLng1 = new LatLng(52.099062536718, 4.4229810095111);
         $this->assertTrue($segments[0]->getPolygon()->isPointInPolygon($latLng1));
 
         // second point is in segment 14
-        $latLng2 = new LatLng(52.119032326695,4.4531103616927);
+        $latLng2 = new LatLng(52.119032326695, 4.4531103616927);
         $this->assertTrue($segments[1]->getPolygon()->isPointInPolygon($latLng2));
 
         // third point is in segment 241
-        $latLng3 = new LatLng(52.196149964057,4.5332691775681);
+        $latLng3 = new LatLng(52.196149964057, 4.5332691775681);
         $this->assertTrue($segments[2]->getPolygon()->isPointInPolygon($latLng3));
 
         // create and process first AISRecord
@@ -1550,7 +1539,5 @@ class VesselPositionProcessorTest extends TestCase
         $this->assertCount(1, $currentJourneys);
         $this->assertArrayHasKey('12345678', $currentJourneys);
         $this->assertEquals('12345678-1685452572', $currentJourneys['12345678']->getId());
-
     }
-
 }
