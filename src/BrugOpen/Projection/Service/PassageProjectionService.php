@@ -492,10 +492,37 @@ class PassageProjectionService
 
                         if ($projectedBridges) {
 
+                            // determine speed to use for projection
+                            $speedData = null;
+
                             // determine current speed and deviation
                             $currentSpeedData = $journeyProjector->determineCurrentSpeed($segments);
 
-                            if ($currentSpeedData) {
+                            // determine cruise speed and deviation
+                            $cruiseSpeedData = $journeyProjector->determineCruiseSpeed($segments);
+
+                            if ($cruiseSpeedData && $currentSpeedData) {
+
+                                if ($currentSpeedData[1] < $cruiseSpeedData[1]) {
+
+                                    // current speed is more precise
+                                    $speedData = $currentSpeedData;
+                                } else {
+
+                                    if (($cruiseSpeedData[0] - $currentSpeedData[0]) > $cruiseSpeedData[1]) {
+
+                                        // current speed deviates too much
+                                    } else {
+
+                                        // use average between cruise speed and current speed
+                                        $speedData = array();
+                                        $speedData[] = ($cruiseSpeedData[0] + $currentSpeedData[0]) / 2;
+                                        $speedData[] = ($cruiseSpeedData[1] + $currentSpeedData[1]) / 2;
+                                    }
+                                }
+                            }
+
+                            if ($speedData) {
 
                                 // create passage projections
 
@@ -503,8 +530,8 @@ class PassageProjectionService
 
                                     $bridgeId = $bridge->getId();
 
-                                    $speed = $currentSpeedData[0];
-                                    $speedStandardDeviation = $currentSpeedData[1];
+                                    $speed = $speedData[0];
+                                    $speedStandardDeviation = $speedData[1];
 
                                     $routeToBridge = $journeyProjector->projectRouteToBridge($bridge, $latLng, $projectedSegmentIds);
 
