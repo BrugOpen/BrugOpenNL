@@ -287,6 +287,6 @@ JSON;
         $this->assertNotNull($projectedRoute);
 
         $distance = $projectedRoute->getLineLength();
-        $this->assertEquals(2708, round($distance));
+        $this->assertEquals(1863, round($distance));
     }
 }

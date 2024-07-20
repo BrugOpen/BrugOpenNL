@@ -461,9 +461,8 @@ class JourneyProjector
 
         foreach ($projectedSegmentIds as $projectedSegmentId) {
 
-            $segmentsBeforeBridge[] = $projectedSegmentId;
-
             if ($previousSegmentId == null) {
+                $segmentsBeforeBridge[] = $projectedSegmentId;
                 $previousSegmentId = $projectedSegmentId;
                 continue;
             }
@@ -474,6 +473,7 @@ class JourneyProjector
                 break;
             }
 
+            $segmentsBeforeBridge[] = $projectedSegmentId;
             $previousSegmentId = $projectedSegmentId;
         }
 
@@ -482,7 +482,9 @@ class JourneyProjector
             $routePointsToBridge = array();
             $routePointsToBridge[] = $startLocation;
 
-            foreach ($segmentsBeforeBridge as $segmentId) {
+            // in first segment, only add route point if in path
+
+            foreach ($segmentsBeforeBridge as $i => $segmentId) {
 
                 $segment = null;
 
@@ -497,7 +499,42 @@ class JourneyProjector
 
                     if ($segmentRoutePoints) {
 
-                        $routePointsToBridge[] = $segmentRoutePoints[0];
+                        $segmentRoutePoint = $segmentRoutePoints[0];
+
+                        if ($i == 0) {
+
+                            // skip route point if next segment is closer than routepoint or bridge
+                            $nextPoint = $bridge->getLatLng();
+                            if (count($segmentsBeforeBridge) > 1) {
+                                $nextIndex = $i + 1;
+                                if (array_key_exists($nextIndex, $segmentsBeforeBridge)) {
+                                    $nextSegmentId = $segmentsBeforeBridge[$nextIndex];
+                                    if (array_key_exists($nextSegmentId, $this->waterwaySegments)) {
+                                        $nextSegment = $this->waterwaySegments[$nextSegmentId];
+                                        $nextSegmentRoutePoints = $nextSegment->getRoutePoints();
+                                        if ($nextSegmentRoutePoints) {
+                                            $nextPoint = $nextSegmentRoutePoints[0];
+                                        }
+                                    }
+                                }
+                            }
+
+                            if ($nextPoint) {
+
+                                $distanceToNextPoint = $startLocation->getDistance($nextPoint);
+                                $distanceFromRoutePointToNextPoint = $segmentRoutePoint->getDistance($nextPoint);
+
+                                if ($distanceToNextPoint && $distanceFromRoutePointToNextPoint) {
+
+                                    if ($distanceToNextPoint < $distanceFromRoutePointToNextPoint) {
+                                        // this would cause a detour, do not add this segment route point
+                                        continue;
+                                    }
+                                }
+                            }
+                        }
+
+                        $routePointsToBridge[] = $segmentRoutePoint;
                     }
                 }
             }
@@ -583,7 +620,7 @@ class JourneyProjector
 
         $count = count($elements);
         $mean = array_sum($elements) / $count;
-        $maxDeviation = $this->standardDeviaton($elements, $magnitude);
+        $maxDeviation = $this->standardDeviaton($elements) * $magnitude;
 
         $keepElements = array();
 
@@ -591,7 +628,7 @@ class JourneyProjector
 
             $deviation = abs($element - $mean);
 
-            if ($deviation < $maxDeviation) {
+            if ($deviation <= $maxDeviation) {
                 $keepElements[] = $element;
             }
         }
@@ -690,8 +727,8 @@ class JourneyProjector
                         $thisTimestamp = $lastSegment->getLastTimestamp();
                         $lastTimestamp = $lastSegment->getFirstTimestamp();
 
-                        $thisLocation = $lastSegment->getFirstLocation();
-                        $lastLocation = $lastSegment->getLastLocation();
+                        $thisLocation = $lastSegment->getLastLocation();
+                        $lastLocation = $lastSegment->getFirstLocation();
 
                         if ($thisTimestamp && $lastTimestamp && $thisLocation && $lastLocation) {
 
@@ -727,6 +764,103 @@ class JourneyProjector
         if (count($samples)) {
             $standardDeviation = $this->standardDeviaton($samples);
             $averageSpeed = array_sum($samples) / count($samples);
+
+            $currentSpeedData = array($averageSpeed, $standardDeviation);
+        }
+        return $currentSpeedData;
+    }
+
+    /**
+     * @param JourneySegment[] $journeySegments
+     * @return float[] an array holding current speed and standard deviation
+     */
+    public function determineCruiseSpeed($journeySegments)
+    {
+
+        $currentSpeedData = null;
+
+        $samples = array();
+
+        if (is_array($journeySegments) && (count($journeySegments) > 1)) {
+
+            $sampleSources = array();
+
+            /**
+             * @var JourneySegment
+             */
+            $previousSegment = null;
+
+            foreach ($journeySegments as $journeySegment) {
+
+                if ($previousSegment) {
+
+                    $thisTimestamp = $journeySegment->getFirstTimestamp();
+                    $thisLocation = $journeySegment->getFirstLocation();
+
+                    $lastTimestamp = $previousSegment->getLastTimestamp();
+                    $lastLocation = $previousSegment->getLastLocation();
+
+                    if ($thisTimestamp && $lastTimestamp && $thisLocation && $lastLocation) {
+
+                        if ($thisTimestamp > $lastTimestamp) {
+
+                            if ($thisLocation->toString() != $lastLocation->toString()) {
+
+                                $sampleSources[] = array($thisTimestamp, $lastTimestamp, $thisLocation, $lastLocation);
+                            }
+                        }
+                    }
+                }
+
+                if ($journeySegment->getFirstTimestamp() != $journeySegment->getLastTimestamp()) {
+
+                    if ($journeySegment->getFirstLocation()->toString() != $journeySegment->getLastLocation()->toString()) {
+
+                        $thisTimestamp = $journeySegment->getLastTimestamp();
+                        $thisLocation = $journeySegment->getLastLocation();
+
+                        $lastTimestamp = $journeySegment->getFirstTimestamp();
+                        $lastLocation = $journeySegment->getFirstLocation();
+
+                        if ($thisTimestamp && $lastTimestamp && $thisLocation && $lastLocation) {
+
+                            if ($thisTimestamp > $lastTimestamp) {
+
+                                if ($thisLocation->toString() != $lastLocation->toString()) {
+
+                                    $sampleSources[] = array($thisTimestamp, $lastTimestamp, $thisLocation, $lastLocation);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                $previousSegment = $journeySegment;
+            }
+
+            foreach ($sampleSources as $sampleSource) {
+
+                $time = $sampleSource[0] - $sampleSource[1];
+                $thisLocation = $sampleSource[2];
+                $lastLocation = $sampleSource[3];
+
+                $distance = $thisLocation->getDistance($lastLocation);
+                if (($time > 0) && ($distance > 0)) {
+
+                    $speedMeterPerSecond = $distance / $time;
+
+                    $speed = $speedMeterPerSecond * 3600 / 1000;
+
+                    $samples[] = $speed;
+                }
+            }
+        }
+
+        $cleanSamples = $this->removeOutliers($samples, 1);
+
+        if (count($cleanSamples)) {
+            $standardDeviation = $this->standardDeviaton($cleanSamples);
+            $averageSpeed = array_sum($cleanSamples) / count($cleanSamples);
 
             $currentSpeedData = array($averageSpeed, $standardDeviation);
         }
