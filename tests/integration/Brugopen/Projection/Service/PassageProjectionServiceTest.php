@@ -578,20 +578,20 @@ JSON;
 
         $lastTimestamp = 1716719724;
 
-        $this->assertEquals(1528, $projectedPassages[0]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
-        $this->assertEquals(116, $projectedPassages[0]->getStandardDeviation());
+        $this->assertEquals(912, $projectedPassages[0]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
+        $this->assertEquals(69, $projectedPassages[0]->getStandardDeviation());
         $this->assertEquals(null, $projectedPassages[0]->getOperationProbability());
 
-        $this->assertEquals(2538, $projectedPassages[1]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
-        $this->assertEquals(192, $projectedPassages[1]->getStandardDeviation());
+        $this->assertEquals(2050, $projectedPassages[1]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
+        $this->assertEquals(155, $projectedPassages[1]->getStandardDeviation());
         $this->assertEquals(1, $projectedPassages[1]->getOperationProbability());
 
-        $this->assertEquals(4201, $projectedPassages[2]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
-        $this->assertEquals(318, $projectedPassages[2]->getStandardDeviation());
+        $this->assertEquals(3730, $projectedPassages[2]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
+        $this->assertEquals(283, $projectedPassages[2]->getStandardDeviation());
         $this->assertEquals(1, $projectedPassages[2]->getOperationProbability());
 
-        $this->assertEquals(6409, $projectedPassages[3]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
-        $this->assertEquals(486, $projectedPassages[3]->getStandardDeviation());
+        $this->assertEquals(6141, $projectedPassages[3]->getDatetimeProjectedPassage()->getTimestamp() - $lastTimestamp);
+        $this->assertEquals(465, $projectedPassages[3]->getStandardDeviation());
         $this->assertEquals(1, $projectedPassages[3]->getOperationProbability());
     }
 
