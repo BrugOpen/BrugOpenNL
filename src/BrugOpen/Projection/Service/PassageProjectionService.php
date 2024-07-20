@@ -503,21 +503,26 @@ class PassageProjectionService
 
                             if ($cruiseSpeedData && $currentSpeedData) {
 
-                                if ($currentSpeedData[1] < $cruiseSpeedData[1]) {
+                                if ($currentSpeedData[0] >= 1) {
 
-                                    // current speed is more precise
-                                    $speedData = $currentSpeedData;
-                                } else {
+                                    // at least 1km/h
 
-                                    if (($cruiseSpeedData[0] - $currentSpeedData[0]) > $cruiseSpeedData[1]) {
+                                    if ($currentSpeedData[1] < $cruiseSpeedData[1]) {
 
-                                        // current speed deviates too much
+                                        // current speed is more precise
+                                        $speedData = $currentSpeedData;
                                     } else {
 
-                                        // use average between cruise speed and current speed
-                                        $speedData = array();
-                                        $speedData[] = ($cruiseSpeedData[0] + $currentSpeedData[0]) / 2;
-                                        $speedData[] = ($cruiseSpeedData[1] + $currentSpeedData[1]) / 2;
+                                        if (($cruiseSpeedData[0] - $currentSpeedData[0]) > $cruiseSpeedData[1]) {
+
+                                            // current speed deviates too much
+                                        } else {
+
+                                            // use average between cruise speed and current speed
+                                            $speedData = array();
+                                            $speedData[] = ($cruiseSpeedData[0] + $currentSpeedData[0]) / 2;
+                                            $speedData[] = ($cruiseSpeedData[1] + $currentSpeedData[1]) / 2;
+                                        }
                                     }
                                 }
                             }
