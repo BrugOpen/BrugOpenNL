@@ -16,6 +16,11 @@ class JourneyReconstructor
     private $context;
 
     /**
+     * @var WaterwayService
+     */
+    private $waterwayService;
+
+    /**
      *
      * @var WaterwaySegment[]
      */
@@ -37,6 +42,8 @@ class JourneyReconstructor
 
         $waterwayService = $context->getService('BrugOpen.WaterwayService');
 
+        $this->waterwayService = $waterwayService;
+
         $segments = $waterwayService->loadWaterwaySegments();
         $this->initalizeWaterwaySegments($segments);
     }
@@ -53,6 +60,22 @@ class JourneyReconstructor
         $segmentConnections = $this->collectSegmentConnections($segments);
 
         $this->segmentConnections = $segmentConnections;
+    }
+
+    /**
+     * @return WaterwayService
+     */
+    public function getWaterwayService()
+    {
+        return $this->waterwayService;
+    }
+
+    /**
+     * @param WaterwayService $waterwayService
+     */
+    public function setWaterwayService($waterwayService)
+    {
+        $this->waterwayService = $waterwayService;
     }
 
     /**
@@ -200,7 +223,119 @@ class JourneyReconstructor
     }
 
     /**
-     * @param VesselJourney
+     * @param VesselJourney $journey
+     * @return JourneySegment[]
+     */
+    public function reconstructCurrentWaterwayJourneySegments($journey)
+    {
+
+        $reconstructedJourneySegments = array();
+
+        $journeySegments = $journey->getJourneySegments();
+
+        // collect locations by timestamp
+        $locationByTimestamp = array();
+
+        foreach ($journeySegments as $journeySegment) {
+
+            $timestamp = $journeySegment->getFirstTimestamp();
+            $location = $journeySegment->getFirstLocation();
+
+            if ($timestamp && $location) {
+
+                $locationByTimestamp[$timestamp] = $location;
+            }
+
+            $timestamp = $journeySegment->getLastTimestamp();
+            $location = $journeySegment->getLastLocation();
+
+            if ($timestamp && $location) {
+
+                $locationByTimestamp[$timestamp] = $location;
+            }
+        }
+
+        ksort($locationByTimestamp);
+
+        /**
+         * @var JourneySegment
+         */
+        $currentJourneySegment = null;
+
+        foreach ($locationByTimestamp as $timestamp => $location) {
+
+            $segmentId = null;
+
+            if ($currentJourneySegment) {
+
+                // check if location is still in last segment
+                $currentSegmentId = $currentJourneySegment->getSegmentId();
+                $currentSegment = $this->waterwaySegments[$currentSegmentId];
+
+                if ($currentSegment->getPolygon()->isPointInPolygon($location)) {
+
+                    // location is still in current segment
+                    $segmentId = $currentSegmentId;
+                }
+            }
+
+            if (!$segmentId) {
+
+                // find matching segment
+                $matchingSegments = $this->waterwayService->getWaterwaySegmentsByLocation($location);
+
+                if ($matchingSegments) {
+                    foreach ($matchingSegments as $matchingSegment) {
+                        $segmentId = $matchingSegment->getId();
+                        break;
+                    }
+                }
+            }
+
+            if ($segmentId) {
+
+                $startNewSegment = false;
+
+                if ($currentJourneySegment) {
+
+                    if ($currentJourneySegment->getSegmentId() != $segmentId) {
+
+                        $startNewSegment = true;
+                    }
+                } else {
+
+                    $startNewSegment = true;
+                }
+
+                if ($startNewSegment) {
+
+                    $currentJourneySegment = new JourneySegment();
+                    $currentJourneySegment->setSegmentId($segmentId);
+                    $currentJourneySegment->setFirstTimestamp($timestamp);
+                    $currentJourneySegment->setFirstLocation($location);
+                    $currentJourneySegment->setLastTimestamp($timestamp);
+                    $currentJourneySegment->setLastLocation($location);
+
+                    $reconstructedJourneySegments[] = $currentJourneySegment;
+                } else {
+
+                    if ($currentJourneySegment) {
+
+                        if ($timestamp > $currentJourneySegment->getLastTimestamp()) {
+
+                            $currentJourneySegment->setLastTimestamp($timestamp);
+                            $currentJourneySegment->setLastLocation($location);
+                        }
+                    }
+                }
+            }
+        }
+
+        return $reconstructedJourneySegments;
+    }
+
+    /**
+     * @param VesselJourney $journey
      * @return JourneySegment[]
      */
     public function reconstructJourneySegments($journey)
@@ -208,16 +343,18 @@ class JourneyReconstructor
 
         $reconstructedJourneySegments = array();
 
-        $journeySegments = $journey->getJourneySegments();
+        // reconstruct to current waterway
 
-        if (is_array($journeySegments) && (count($journeySegments) > 1)) {
+        $currentWaterwayJourneySegments = $this->reconstructCurrentWaterwayJourneySegments($journey);
+
+        if (is_array($currentWaterwayJourneySegments) && (count($currentWaterwayJourneySegments) > 1)) {
 
             /**
              * @var JourneySegment
              */
             $previousJourneySegment = null;
 
-            foreach ($journeySegments as $journeySegment) {
+            foreach ($currentWaterwayJourneySegments as $journeySegment) {
 
                 $segmentsConnected = false;
 
@@ -270,6 +407,9 @@ class JourneyReconstructor
 
                 $previousJourneySegment = $journeySegment;
             }
+        } else {
+
+            $reconstructedJourneySegments = $currentWaterwayJourneySegments;
         }
         return $reconstructedJourneySegments;
     }
