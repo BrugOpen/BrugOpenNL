@@ -24,11 +24,90 @@ class WaterwayService
     private $tableManager;
 
     /**
+     *
+     * @var WaterwaySegment[]
+     */
+    private $waterwaySegments;
+
+    /**
+     * @var int[][]
+     */
+    private $segmentConnections;
+
+    /**
+     *
+     * @var LatLngBounds[]
+     */
+    private $waterwaySegmentBounds = array();
+
+    /**
+     *
+     * @var LatLngBounds
+     */
+    private $waterwaySegmentOuterBounds;
+
+    /**
      * @param Context $context
      */
     public function initialize(Context $context)
     {
         $this->context = $context;
+    }
+
+    /**
+     *
+     * @param WaterwaySegment[] $segments
+     */
+    public function initalizeWaterwaySegments($segments)
+    {
+
+        $this->waterwaySegments = array();
+        $this->waterwaySegmentBounds = array();
+
+        $outerBoundsContents = array();
+
+        foreach ($segments as $segment) {
+
+            $segmentId = $segment->getId();
+
+            if ($segmentId) {
+
+                $this->waterwaySegments[$segmentId] = $segment;
+
+                $bounds = $segment->getBounds();
+
+                if ($bounds) {
+
+                    $this->waterwaySegmentBounds[$segmentId] = $bounds;
+
+                    $outerBoundsContents[] = $bounds->getNorthEast();
+                    $outerBoundsContents[] = $bounds->getSouthWest();
+                }
+            }
+        }
+
+        $segmentConnections = $this->collectSegmentConnections($this->waterwaySegments);
+        $this->segmentConnections = $segmentConnections;
+
+        $outerBounds = new LatLngBounds($outerBoundsContents);
+
+        $this->waterwaySegmentOuterBounds = $outerBounds;
+    }
+
+    /**
+     * @return LatLngBounds[]
+     */
+    public function getWaterwaySegmentBounds()
+    {
+        return $this->waterwaySegmentBounds;
+    }
+
+    /**
+     * @return LatLngBounds
+     */
+    public function getWaterwaySegmentOuterBounds()
+    {
+        return $this->waterwaySegmentOuterBounds;
     }
 
     /**
@@ -439,5 +518,112 @@ class WaterwayService
                 $tableManager->updateRecords('bo_waterway_segment', $values, $keys);
             }
         }
+    }
+
+    /**
+     * @param WaterwaySegment[] $segments
+     * @return int[][]
+     */
+    public function collectSegmentConnections($segments)
+    {
+
+        $segmentConnections = array();
+
+        foreach ($segments as $segment) {
+
+            $segmentId = (int)$segment->getId();
+            $connectedSegments = $segment->getConnectedSegmentIds();
+
+            if ($segmentId && $connectedSegments) {
+
+                foreach ($connectedSegments as $connectedSegmentId) {
+
+                    $connectedSegmentId = (int)$connectedSegmentId;
+
+                    if (!array_key_exists($segmentId, $segmentConnections)) {
+                        $segmentConnections[$segmentId] = array();
+                    }
+
+                    if (!array_key_exists($connectedSegmentId, $segmentConnections)) {
+                        $segmentConnections[$connectedSegmentId] = array();
+                    }
+
+                    $segmentConnections[$segmentId][$connectedSegmentId] = $connectedSegmentId;
+                    $segmentConnections[$connectedSegmentId][$segmentId] = $segmentId;
+                }
+            }
+        }
+
+        return $segmentConnections;
+    }
+
+    /**
+     * @param int $segmentId
+     * @param int $otherSegmentId
+     * @return bool
+     */
+    public function waterwaySegmentsConnected($segmentId, $otherSegmentId)
+    {
+
+        $waterwaySegmentsConnected = false;
+
+        if ($segmentId && $otherSegmentId) {
+
+            if (array_key_exists($segmentId, $this->segmentConnections)) {
+
+                $waterwaySegmentsConnected = array_key_exists($otherSegmentId, $this->segmentConnections[$segmentId]);
+            }
+        }
+
+        return $waterwaySegmentsConnected;
+    }
+
+    /**
+     * @param LatLng $lagLng
+     * @return WaterwaySegment[]
+     */
+    public function getWaterwaySegmentsByLocation($latLng)
+    {
+
+        $segments = array();
+
+        if ($latLng) {
+
+            if (!is_array($this->waterwaySegments)) {
+
+                $loadedSegments = $this->loadWaterwaySegments();
+                $this->initalizeWaterwaySegments($loadedSegments);
+            }
+
+            if ($this->waterwaySegmentOuterBounds) {
+
+                if ($this->waterwaySegmentOuterBounds->isInBounds($latLng)) {
+
+                    if ($this->waterwaySegmentBounds) {
+
+                        foreach ($this->waterwaySegmentBounds as $segmentId => $bounds) {
+
+                            if ($bounds->isInBounds($latLng)) {
+
+                                if (array_key_exists($segmentId, $this->waterwaySegments)) {
+
+                                    $segment = $this->waterwaySegments[$segmentId];
+
+                                    if ($segment->getPolygon()) {
+
+                                        if ($segment->getPolygon()->isPointInPolygon($latLng)) {
+
+                                            $segments[$segmentId] = $segment;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return $segments;
     }
 }
