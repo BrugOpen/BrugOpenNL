@@ -76,6 +76,11 @@ class Bridge
     private $active;
 
     /**
+     * @var int
+     */
+    private $minOperationDuration;
+
+    /**
      * @return number
      */
     public function getId()
@@ -265,5 +270,21 @@ class Bridge
     public function setActive($active)
     {
         $this->active = $active;
+    }
+
+    /**
+     * @return int
+     */
+    public function getMinOperationDuration()
+    {
+        return $this->minOperationDuration;
+    }
+
+    /**
+     * @param int $minOperationDuration
+     */
+    public function setMinOperationDuration($minOperationDuration)
+    {
+        $this->minOperationDuration = $minOperationDuration;
     }
 }
