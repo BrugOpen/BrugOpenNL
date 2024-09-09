@@ -169,7 +169,6 @@ class DatabaseTableManagerFactory implements ServiceFactory
         $config['bo_passage_projection']['datetime_passage'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME;
         $config['bo_passage_projection']['standard_deviation'] = DatabaseTableManager::COLUMN_INT;
         $config['bo_passage_projection']['operation_probability'] = DatabaseTableManager::COLUMN_STR;
-        $config['bo_passage_projection']['situation_id'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_passage_projection']['datetime_projection'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME;
         $config['bo_plaats']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_plaats']['bag_id'] = DatabaseTableManager::COLUMN_STR;
