@@ -68,7 +68,6 @@ class ProjectedPassageDataStore
             $values['datetime_passage'] = $passageProjection->getDatetimeProjectedPassage();
             $values['standard_deviation'] = $passageProjection->getStandardDeviation();
             $values['operation_probability'] = $operationProbability;
-            $values['situation_id'] = $passageProjection->getSituationId();
             $values['datetime_projection'] = $passageProjection->getDatetimeProjection();
 
             $values = array_merge($criteria, $values);
@@ -142,7 +141,6 @@ class ProjectedPassageDataStore
                                 $obsoleteProjection->setDatetimeProjectedPassage($lastProjection['datetime_passage']);
                                 $obsoleteProjection->setStandardDeviation($lastProjection['standard_deviation']);
                                 $obsoleteProjection->setOperationProbability($lastProjection['operation_probability']);
-                                $obsoleteProjection->setSituationId($lastProjection['situation_id']);
                                 $obsoleteProjection->setDatetimeProjection($lastProjection['datetime_projection']);
 
                                 $obsoleteProjections[$projectionKey] = $obsoleteProjection;
@@ -154,5 +152,62 @@ class ProjectedPassageDataStore
         }
 
         return $obsoleteProjections;
+    }
+
+    /**
+     * @return ProjectedBridgePassage[]
+     */
+    public function loadCurrentPassageProjections()
+    {
+        $passageProjections = array();
+
+        $tableManager = $this->getTableManager();
+
+        $lastId = null;
+        $limit = 1000;
+        $onlySince = time() - 60;
+        do {
+
+            $orders = array(array('id', 'DESC'));
+            $criteria = array();
+            if ($lastId !== null) {
+                $criteria[] = new CriteriumFieldComparison('id', Criterium::OPERATOR_LT, $lastId);
+            }
+            $records = $tableManager->findRecords('bo_passage_projection', null, $criteria, $orders, $limit);
+
+            $lastId = null;
+
+            if ($records) {
+
+                foreach ($records as $record) {
+
+                    $lastId = $record['id'];
+
+                    $datetimeProjection = $record['datetime_projection'];
+                    if ($datetimeProjection === null) {
+                        continue;
+                    }
+                    if ($datetimeProjection->getTimestamp() < $onlySince) {
+                        $lastId = null;
+                        break;
+                    }
+
+                    $passageProjection = new ProjectedBridgePassage();
+                    $passageProjection->setJourneyId($record['journey_id']);
+                    $passageProjection->setBridgeId($record['bridge_id']);
+                    $passageProjection->setDatetimeProjectedPassage($record['datetime_passage']);
+                    $passageProjection->setStandardDeviation($record['standard_deviation']);
+                    $passageProjection->setOperationProbability($record['operation_probability']);
+                    $passageProjection->setDatetimeProjection($record['datetime_projection']);
+                    $passageProjections[] = $passageProjection;
+
+                    if ($datetimeProjection->getTimestamp() > $onlySince) {
+                        $onlySince = $datetimeProjection->getTimestamp();
+                    }
+                }
+            }
+        } while ($lastId !== null);
+
+        return $passageProjections;
     }
 }
