@@ -305,9 +305,21 @@ class PassageProjectionService
 
             $numJourneysProcessed = 0;
 
+            $timeStart = microtime(true);
+
             foreach ($activeJourneys as $activeJourney) {
 
+                $journeyTimeStart = microtime(true);
+
                 $projectedBridgePassages = $this->createPassageProjections($activeJourney);
+
+                $journeyTimeStop = microtime(true);
+
+                $journeyTimeSpent = $journeyTimeStop - $journeyTimeStart;
+
+                if ($journeyTimeSpent > 1) {
+                    $logger->warning('Projecting passages for ' . $activeJourney->getId() . ' took ' . round($journeyTimeSpent, 2) . ' seconds');
+                }
 
                 if ($projectedBridgePassages) {
 
@@ -337,7 +349,16 @@ class PassageProjectionService
                 }
             }
 
-            $logger->info('Done processing ' . $numJourneysProcessed . ' journeys');
+            $timeStop = microtime(true);
+
+            $timeSpent = $timeStop - $timeStart;
+
+            if ($timeSpent > 10) {
+                $logger->warning('Processing ' . $numJourneysProcessed . ' journeys took ' . round($timeSpent, 2) . ' seconds');
+                $logger->info('Done processing ' . $numJourneysProcessed . ' journeys');
+            } else {
+                $logger->info('Done processing ' . $numJourneysProcessed . ' journeys in ' . round($timeSpent, 2) . ' seconds');
+            }
 
             // clean up obsolete passages
             $obsoleteProjections = $projectedPassageDataStore->findObsoletePassageProjections($datetimeProjection);
@@ -413,14 +434,24 @@ class PassageProjectionService
 
                 $matchingRouteJourneys = array();
 
+                $reconstructingStart = microtime(true);
+
                 foreach ($pastJourneys as $pastJourney) {
 
                     $allSegmentsConnected = $journeyReconstructor->journeySegmentsConnected($pastJourney);
 
                     if (!$allSegmentsConnected) {
-                        // $logger->debug('Reconstructing full journey for ' . $activeJourney->getId());
+                        $logger->debug('Reconstructing full journey for ' . $pastJourney->getId());
                         $journeyReconstructor->reconstructFullJourney($pastJourney);
                     }
+                }
+
+                $reconstructingStop = microtime(true);
+
+                $reconstructingSpent = $reconstructingStop - $reconstructingStart;
+
+                if ($reconstructingSpent > 1) {
+                    $logger->warning('Reconstructing ' . $numPastJourneys . ' past journeys for ' . $activeJourney->getId() . ' took ' . round($reconstructingSpent, 2) . ' seconds');
                 }
 
                 $segmentIds = array($previousSegmentId, $currentSegmentId);
