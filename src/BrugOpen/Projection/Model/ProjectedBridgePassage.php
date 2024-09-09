@@ -31,11 +31,6 @@ class ProjectedBridgePassage
     private $operationProbability;
 
     /**
-     * @var string
-     */
-    private $situationId;
-
-    /**
      * @var \DateTime
      */
     private $datetimeProjection;
@@ -118,22 +113,6 @@ class ProjectedBridgePassage
     public function setOperationProbability($operationProbability)
     {
         $this->operationProbability = $operationProbability;
-    }
-
-    /**
-     * @return string
-     */
-    public function getSituationId()
-    {
-        return $this->situationId;
-    }
-
-    /**
-     * @param string $situationId
-     */
-    public function setSituationId($situationId)
-    {
-        $this->situationId = $situationId;
     }
 
     /**
