@@ -163,6 +163,15 @@ class DatabaseTableManagerFactory implements ServiceFactory
         $config['bo_operation']['twitter_status_end'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_operation']['push_sent_start'] = DatabaseTableManager::COLUMN_INT;
         $config['bo_operation']['push_sent_end'] = DatabaseTableManager::COLUMN_INT;
+        $config['bo_operation_projection']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
+        $config['bo_operation_projection']['event_id'] = DatabaseTableManager::COLUMN_STR + DatabaseTableManager::COLUMN_NOTNULL;
+        $config['bo_operation_projection']['version'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
+        $config['bo_operation_projection']['operation_id'] = DatabaseTableManager::COLUMN_INT;
+        $config['bo_operation_projection']['bridge_id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
+        $config['bo_operation_projection']['certainty'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
+        $config['bo_operation_projection']['time_start'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME;
+        $config['bo_operation_projection']['time_end'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME;
+        $config['bo_operation_projection']['datetime_projection'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME;
         $config['bo_passage_projection']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_passage_projection']['journey_id'] = DatabaseTableManager::COLUMN_STR + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_passage_projection']['bridge_id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
