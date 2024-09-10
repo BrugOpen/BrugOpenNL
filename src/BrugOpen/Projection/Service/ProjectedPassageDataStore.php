@@ -193,6 +193,7 @@ class ProjectedPassageDataStore
                     }
 
                     $passageProjection = new ProjectedBridgePassage();
+                    $passageProjection->setId($record['id']);
                     $passageProjection->setJourneyId($record['journey_id']);
                     $passageProjection->setBridgeId($record['bridge_id']);
                     $passageProjection->setDatetimeProjectedPassage($record['datetime_passage']);

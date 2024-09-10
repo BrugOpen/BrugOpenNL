@@ -6,6 +6,11 @@ class ProjectedBridgePassage
 {
 
     /**
+     * @var int
+     */
+    private $id;
+
+    /**
      * @var string
      */
     private $journeyId;
@@ -34,6 +39,22 @@ class ProjectedBridgePassage
      * @var \DateTime
      */
     private $datetimeProjection;
+
+    /**
+     * @return int
+     */
+    public function getId()
+    {
+        return $this->id;
+    }
+
+    /**
+     * @param int $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
 
     /**
      * @return string
