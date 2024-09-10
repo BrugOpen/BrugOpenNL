@@ -61,8 +61,11 @@ class OperationProjectionService
     /**
      * @param Bridge $bridge
      * @param ProjectedBridgePassage[] $passageProjections
+     * @param int $maxStandardDeviation
+     * @param float $minOperationProbability
+     * @param \DateTime $maxDatetimePassage
      */
-    public function createOperationProjections($bridge, $passageProjections)
+    public function createOperationProjections($bridge, $passageProjections, $maxStandardDeviation, $minOperationProbability, $maxDatetimePassage)
     {
 
         $normalOperationDuration = 60 * 4; // default to 4 minutes
@@ -75,11 +78,29 @@ class OperationProjectionService
 
         if (is_array($passageProjections) && (count($passageProjections) > 0)) {
 
+            // collect passages that would cause an operation
+
+            $eligiblePassageProjections = [];
+
+            foreach ($passageProjections as $passageProjection) {
+
+                $standardDeviation = $passageProjection->getStandardDeviation();
+                $operationProbability = $passageProjection->getOperationProbability();
+
+                if (($standardDeviation !== null) && ($operationProbability !== null)) {
+                    if (($standardDeviation <= $maxStandardDeviation) && ($operationProbability >= $minOperationProbability)) {
+                        if ($passageProjection->getDatetimeProjectedPassage()->getTimestamp() <= $maxDatetimePassage->getTimestamp()) {
+                            $eligiblePassageProjections[] = $passageProjection;
+                        }
+                    }
+                }
+            }
+
             // sort passage projections by time
 
             $passagesByTime = array();
 
-            foreach ($passageProjections as $passageProjection) {
+            foreach ($eligiblePassageProjections as $passageProjection) {
                 $passageTime = $passageProjection->getDatetimeProjectedPassage()->getTimestamp();
                 $passagesByTime[$passageTime][] = $passageProjection;
             }
@@ -225,6 +246,10 @@ class OperationProjectionService
         // load future operations by bridge
         $futureOperationsByBridge = $this->loadFutureOperationsByBridge();
 
+        $minOperationProbability = 0.5; // 50%
+        $maxStandardDeviation = 90; // 90 seconds
+        $maxDatetimePassage = new \DateTime('@' . ($datetimeProjection->getTimestamp() + (30 * 60))); // 30 minutes
+
         foreach ($bridgesWithPassageProjections as $bridge) {
 
             $bridgeId = $bridge->getId();
@@ -238,7 +263,7 @@ class OperationProjectionService
 
             $passageProjections = isset($passageProjectionsByBridge[$bridgeId]) ? $passageProjectionsByBridge[$bridgeId] : [];
 
-            $operationProjections = $this->createOperationProjections($bridge, $passageProjections);
+            $operationProjections = $this->createOperationProjections($bridge, $passageProjections, $maxStandardDeviation, $minOperationProbability, $maxDatetimePassage);
 
             $matchingEventId = null;
             $version = 1;
@@ -261,7 +286,6 @@ class OperationProjectionService
                         break;
                     }
                 }
-
 
                 if ($matchingEventId == null) {
 
@@ -291,7 +315,7 @@ class OperationProjectionService
                     // determine new event id
                     $lastProjectedOperationId = $this->getLastOperationProjectionId();
                     $nextProjectedOperationId = $lastProjectedOperationId + 1;
-                    $eventId = 'BONL_' . $bridge->getIsrsCode() . '_' . $nextProjectedOperationId;
+                    $eventId = 'BONL01_' . $bridge->getIsrsCode() . '_' . $nextProjectedOperationId;
                 }
 
                 $operationProjectionValues = [];

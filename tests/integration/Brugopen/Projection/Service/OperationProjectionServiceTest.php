@@ -16,16 +16,23 @@ class OperationProjectionServiceTest extends TestCase
 
         $now = time();
 
+        $maxStandardDeviation = 90;
+        $minOperationProbability = 0.5;
+        $maxDateTimePassage = new \DateTime('@' . ($now + (30 * 60)));
+
         // projected passage in 400 seconds
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (400)));
 
         $passageProjection = new ProjectedBridgePassage();
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
+        $passageProjection->setOperationProbability(1);
+        $passageProjection->setStandardDeviation(30);
 
         $passageProjections = array($passageProjection);
 
         $operationProjectionService = new OperationProjectionService();
-        $operationProjections = $operationProjectionService->createOperationProjections($bridge, $passageProjections);
+
+        $operationProjections = $operationProjectionService->createOperationProjections($bridge, $passageProjections, $maxStandardDeviation, $minOperationProbability, $maxDateTimePassage);
 
         $this->assertCount(1, $operationProjections);
 
@@ -49,11 +56,17 @@ class OperationProjectionServiceTest extends TestCase
 
         $now = time();
 
+        $maxStandardDeviation = 90;
+        $minOperationProbability = 0.5;
+        $maxDateTimePassage = new \DateTime('@' . ($now + (30 * 60)));
+
         // first projected passage in 400 seconds
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (400)));
 
         $passageProjection = new ProjectedBridgePassage();
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
+        $passageProjection->setOperationProbability(1);
+        $passageProjection->setStandardDeviation(30);
 
         $passageProjections[] = $passageProjection;
 
@@ -62,11 +75,13 @@ class OperationProjectionServiceTest extends TestCase
 
         $passageProjection = new ProjectedBridgePassage();
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
+        $passageProjection->setOperationProbability(1);
+        $passageProjection->setStandardDeviation(30);
 
         $passageProjections[] = $passageProjection;
 
         $operationProjectionService = new OperationProjectionService();
-        $operationProjections = $operationProjectionService->createOperationProjections($bridge, $passageProjections);
+        $operationProjections = $operationProjectionService->createOperationProjections($bridge, $passageProjections, $maxStandardDeviation, $minOperationProbability, $maxDateTimePassage);
 
         $this->assertCount(1, $operationProjections);
 
@@ -94,11 +109,17 @@ class OperationProjectionServiceTest extends TestCase
 
         $now = time();
 
+        $maxStandardDeviation = 90;
+        $minOperationProbability = 0.5;
+        $maxDateTimePassage = new \DateTime('@' . ($now + (30 * 60)));
+
         // first projected passage in 400 seconds
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (400)));
 
         $passageProjection = new ProjectedBridgePassage();
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
+        $passageProjection->setOperationProbability(1);
+        $passageProjection->setStandardDeviation(30);
 
         $passageProjections[] = $passageProjection;
 
@@ -107,11 +128,13 @@ class OperationProjectionServiceTest extends TestCase
 
         $passageProjection = new ProjectedBridgePassage();
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
+        $passageProjection->setOperationProbability(1);
+        $passageProjection->setStandardDeviation(30);
 
         $passageProjections[] = $passageProjection;
 
         $operationProjectionService = new OperationProjectionService();
-        $operationProjections = $operationProjectionService->createOperationProjections($bridge, $passageProjections);
+        $operationProjections = $operationProjectionService->createOperationProjections($bridge, $passageProjections, $maxStandardDeviation, $minOperationProbability, $maxDateTimePassage);
 
         $this->assertCount(2, $operationProjections);
 
