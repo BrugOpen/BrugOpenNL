@@ -45,6 +45,11 @@ class OperationProjectionServiceTest extends TestCase
         $this->assertEquals(240, $duration);
 
         $this->assertEquals(2, $operationProjection->getCertainty());
+
+        $projectedBridgePassages = $operationProjection->getProjectedPassages();
+        $this->assertNotEmpty($projectedBridgePassages);
+        $this->assertCount(1, $projectedBridgePassages);
+        $this->assertEquals($passageProjection, $projectedBridgePassages[0]);
     }
 
     public function testCreateOperationProjectionsTwoCombinedPassages()
@@ -64,6 +69,7 @@ class OperationProjectionServiceTest extends TestCase
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (400)));
 
         $passageProjection = new ProjectedBridgePassage();
+        $passageProjection->setId(123);
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
         $passageProjection->setOperationProbability(1);
         $passageProjection->setStandardDeviation(30);
@@ -74,6 +80,7 @@ class OperationProjectionServiceTest extends TestCase
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (550)));
 
         $passageProjection = new ProjectedBridgePassage();
+        $passageProjection->setId(234);
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
         $passageProjection->setOperationProbability(1);
         $passageProjection->setStandardDeviation(30);
@@ -98,6 +105,12 @@ class OperationProjectionServiceTest extends TestCase
         $this->assertEquals(240 * 1.5, $duration);
 
         $this->assertEquals(2, $operationProjection->getCertainty());
+
+        $projectedBridgePassages = $operationProjection->getProjectedPassages();
+        $this->assertNotEmpty($projectedBridgePassages);
+        $this->assertCount(2, $projectedBridgePassages);
+        $this->assertEquals(123, $projectedBridgePassages[0]->getId());
+        $this->assertEquals(234, $projectedBridgePassages[1]->getId());
     }
 
     public function testCreateOperationProjectionsTwoSeparatePassages()
@@ -117,6 +130,7 @@ class OperationProjectionServiceTest extends TestCase
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (400)));
 
         $passageProjection = new ProjectedBridgePassage();
+        $passageProjection->setId(123);
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
         $passageProjection->setOperationProbability(1);
         $passageProjection->setStandardDeviation(30);
@@ -127,6 +141,7 @@ class OperationProjectionServiceTest extends TestCase
         $datetimeProjectedPassage = new \DateTime('@' . ($now + (1000)));
 
         $passageProjection = new ProjectedBridgePassage();
+        $passageProjection->setId(234);
         $passageProjection->setDatetimeProjectedPassage($datetimeProjectedPassage);
         $passageProjection->setOperationProbability(1);
         $passageProjection->setStandardDeviation(30);
@@ -153,6 +168,11 @@ class OperationProjectionServiceTest extends TestCase
 
         $this->assertEquals(2, $operationProjection->getCertainty());
 
+        $projectedBridgePassages = $operationProjection->getProjectedPassages();
+        $this->assertNotEmpty($projectedBridgePassages);
+        $this->assertCount(1, $projectedBridgePassages);
+        $this->assertEquals(123, $projectedBridgePassages[0]->getId());
+
         // check second operation projection
 
         $operationProjection = $operationProjections[1];
@@ -167,5 +187,10 @@ class OperationProjectionServiceTest extends TestCase
         $this->assertEquals(240, $duration);
 
         $this->assertEquals(2, $operationProjection->getCertainty());
+
+        $projectedBridgePassages = $operationProjection->getProjectedPassages();
+        $this->assertNotEmpty($projectedBridgePassages);
+        $this->assertCount(1, $projectedBridgePassages);
+        $this->assertEquals(234, $projectedBridgePassages[0]->getId());
     }
 }

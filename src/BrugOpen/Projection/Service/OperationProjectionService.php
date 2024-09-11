@@ -64,6 +64,7 @@ class OperationProjectionService
      * @param int $maxStandardDeviation
      * @param float $minOperationProbability
      * @param \DateTime $maxDatetimePassage
+     * @return ProjectedOperation[]
      */
     public function createOperationProjections($bridge, $passageProjections, $maxStandardDeviation, $minOperationProbability, $maxDatetimePassage)
     {
@@ -133,10 +134,13 @@ class OperationProjectionService
                     $operationProjection->setTimeEnd(new \DateTime('@' . $timeEnd));
                     $operationProjection->setCertainty(2); // probable
 
-                    $operationProjections[] = $operationProjection;
+                    $projectedPassages = array();
+                    $projectedPassages[] = array_shift($passageProjectionsStack);
+                    $projectedPassages[] = array_shift($passageProjectionsStack);
 
-                    array_shift($passageProjectionsStack);
-                    array_shift($passageProjectionsStack);
+                    $operationProjection->setProjectedPassages($projectedPassages);
+
+                    $operationProjections[] = $operationProjection;
                 }
             }
 
@@ -175,6 +179,11 @@ class OperationProjectionService
                 $operationProjection->setTimeStart(new \DateTime('@' . $timeStart));
                 $operationProjection->setTimeEnd(new \DateTime('@' . $timeEnd));
                 $operationProjection->setCertainty(2); // probable
+
+                $projectedPassages = array();
+                $projectedPassages[] = $projectedPassage;
+
+                $operationProjection->setProjectedPassages($projectedPassages);
 
                 $operationProjections[] = $operationProjection;
             }
