@@ -339,6 +339,16 @@ class OperationProjectionService
 
                 // insert new operation projection
                 $tableManager->insertRecord('bo_operation_projection', $operationProjectionValues);
+
+                // update event id in projected passages
+                $projectedPassages = $operationProjection->getProjectedPassages();
+
+                foreach ($projectedPassages as $projectedPassage) {
+                    $values = [];
+                    $values['event_id'] = $eventId;
+                    $keys = ['id' => $projectedPassage->getId()];
+                    $tableManager->updateRecords('bo_passage_projection', $values, $keys);
+                }
             }
         }
 
