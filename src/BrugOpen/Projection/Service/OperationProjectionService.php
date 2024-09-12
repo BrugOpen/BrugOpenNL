@@ -364,7 +364,7 @@ class OperationProjectionService
 
             // check for operations that are no longer current
 
-            if (isset($$existingOperationProjectionsByBridge[$bridgeId])) {
+            if (isset($existingOperationProjectionsByBridge[$bridgeId])) {
 
                 $existingOperationProjections = $existingOperationProjectionsByBridge[$bridgeId];
 
