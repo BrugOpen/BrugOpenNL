@@ -259,9 +259,13 @@ class OperationProjectionService
         $maxStandardDeviation = 90; // 90 seconds
         $maxDatetimePassage = new \DateTime('@' . ($datetimeProjection->getTimestamp() + (30 * 60))); // 30 minutes
 
+        $latestVersionByEventId = array();
+
         foreach ($bridgesWithPassageProjections as $bridge) {
 
             $bridgeId = $bridge->getId();
+
+            $futureOperations = isset($futureOperationsByBridge[$bridgeId]) ? $futureOperationsByBridge[$bridgeId] : [];
 
             $maxGap = 5 * 60; // 5 minutes
 
@@ -280,8 +284,6 @@ class OperationProjectionService
             foreach ($operationProjections as $operationProjection) {
 
                 // look for existing operation projection with nearly the same time start and time end
-
-                $futureOperations = isset($futureOperationsByBridge[$bridgeId]) ? $futureOperationsByBridge[$bridgeId] : [];
 
                 foreach ($futureOperations as $futureOperation) {
 
@@ -303,6 +305,10 @@ class OperationProjectionService
                     $existingOperationProjections = isset($existingOperationProjectionsByBridge[$bridgeId]) ? $existingOperationProjectionsByBridge[$bridgeId] : [];
 
                     foreach ($existingOperationProjections as $existingOperationProjection) {
+
+                        if ($existingOperationProjection->getCertainty() == 0) {
+                            continue;
+                        }
 
                         $gap = $this->calculateGap($operationProjection->getTimeStart(), $operationProjection->getTimeEnd(), $existingOperationProjection->getTimeStart(), $existingOperationProjection->getTimeEnd());
 
@@ -349,11 +355,46 @@ class OperationProjectionService
                     $keys = ['id' => $projectedPassage->getId()];
                     $tableManager->updateRecords('bo_passage_projection', $values, $keys);
                 }
+
+                // store latest version by event id
+                $latestVersionByEventId[$eventId] = $version;
+            }
+
+            $futureOperationsByBridge[$bridgeId] = $operationProjections;
+
+            // check for operations that are no longer current
+
+            if (isset($$existingOperationProjectionsByBridge[$bridgeId])) {
+
+                $existingOperationProjections = $existingOperationProjectionsByBridge[$bridgeId];
+
+                foreach ($existingOperationProjections as $existingOperationProjection) {
+                    $eventId = $existingOperationProjection->getEventId();
+                    $newerVersionExists = isset($latestVersionByEventId[$eventId]);
+
+                    if ($existingOperationProjection->getCertainty() == 0) {
+                        continue;
+                    }
+
+                    if (!$newerVersionExists) {
+
+                        // create new version with certainty 0
+                        $version = $futureOperation->getVersion() + 1;
+
+                        $operationProjectionValues['event_id'] = $eventId;
+                        $operationProjectionValues['version'] = $version;
+                        $operationProjectionValues['bridge_id'] = $bridgeId;
+                        $operationProjectionValues['time_start'] = null;
+                        $operationProjectionValues['time_end'] = null;
+                        $operationProjectionValues['certainty'] = 0;
+                        $operationProjectionValues['datetime_projection'] = $datetimeProjection;
+
+                        // insert new operation projection
+                        $tableManager->insertRecord('bo_operation_projection', $operationProjectionValues);
+                    }
+                }
             }
         }
-
-        // mark remaining future operations as obsolete
-
     }
 
     /**
