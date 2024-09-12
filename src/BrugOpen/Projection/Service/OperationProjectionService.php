@@ -379,7 +379,7 @@ class OperationProjectionService
                     if (!$newerVersionExists) {
 
                         // create new version with certainty 0
-                        $version = $futureOperation->getVersion() + 1;
+                        $version = $existingOperationProjection->getVersion() + 1;
 
                         $operationProjectionValues['event_id'] = $eventId;
                         $operationProjectionValues['version'] = $version;
