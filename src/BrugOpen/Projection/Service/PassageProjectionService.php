@@ -307,6 +307,8 @@ class PassageProjectionService
 
             $timeStart = microtime(true);
 
+            $projectableBridges = $this->loadProjectableBridges();
+
             foreach ($activeJourneys as $activeJourney) {
 
                 $journeyTimeStart = microtime(true);
@@ -330,6 +332,11 @@ class PassageProjectionService
                         if ($datetimeProjectedPassage->getTimestamp() >= $datetimeProjection->getTimestamp()) {
 
                             $bridgeId = $projectedBridgePassage->getBridgeId();
+
+                            if (!array_key_exists($bridgeId, $projectableBridges)) {
+                                // bridge is not projectable
+                                continue;
+                            }
 
                             $passageProjection = $projectedBridgePassage;
                             $passageProjection->setJourneyId($activeJourney->getId());
@@ -962,5 +969,48 @@ class PassageProjectionService
         }
 
         return $bridgeHasClearance;
+    }
+
+    /**
+     * Load projectable bridges
+     * @return Bridge[]
+     */
+    public function loadProjectableBridges()
+    {
+
+        $bridges = array();
+
+        $tableManager = $this->getTableManager();
+
+        $criteria = array('announce_approach' => 1);
+
+        $records = $tableManager->findRecords('bo_bridge', $criteria);
+
+        if ($records) {
+
+            foreach ($records as $record) {
+
+                $bridgeId = $record['id'];
+
+                $active = $record['active'];
+                if ($active !== '') {
+                    if ($active === 0) {
+                        continue;
+                    }
+                }
+
+                $bridge = new Bridge();
+                $bridge->setId($bridgeId);
+                $bridge->setTitle($record['title']);
+                $bridge->setCity($record['city']);
+                $bridge->setCity2($record['city2']);
+                $bridge->setIsrsCode($record['isrs_code']);
+                $bridge->setMinOperationDuration(isset($record['min_operation_duration']) ? $record['min_operation_duration'] : null);
+
+                $bridges[$bridgeId] = $bridge;
+            }
+        }
+
+        return $bridges;
     }
 }
