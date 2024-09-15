@@ -11,11 +11,16 @@ use BrugOpen\Projection\Model\ProjectedOperation;
 
 class OperationProjectionService
 {
-
     /**
      * @var Context
      */
     private $context;
+
+    /**
+     *
+     * @var \Psr\Log\LoggerInterface
+     */
+    private $log;
 
     /**
      * @var ProjectedPassageDataStore
@@ -28,11 +33,43 @@ class OperationProjectionService
     private $tableManager;
 
     /**
+     *
+     * @var EventDispatcher
+     */
+    private $eventDispatcher;
+
+    /**
      * @param Context $context
      */
     public function initialize($context)
     {
         $this->context = $context;
+    }
+
+    /**
+     *
+     * @return \Psr\Log\LoggerInterface
+     */
+    public function getLog()
+    {
+        if ($this->log == null) {
+
+            $context = $this->context;
+            if ($context != null) {
+
+                $this->log = $context->getLogRegistry()->getLog($this);
+            }
+        }
+
+        return $this->log;
+    }
+
+    /**
+     * @param LoggerInterface $loggerInterface
+     */
+    public function setLog($loggerInterface)
+    {
+        $this->log = $loggerInterface;
     }
 
     /**
@@ -56,6 +93,29 @@ class OperationProjectionService
             $this->tableManager = $this->context->getService('BrugOpen.TableManager');
         }
         return $this->tableManager;
+    }
+
+    /**
+     *
+     * @return \BrugOpen\Core\EventDispatcher
+     */
+    public function getEventDispatcher()
+    {
+        if ($this->eventDispatcher == null) {
+
+            $this->eventDispatcher = $this->context->getEventDispatcher();
+        }
+
+        return $this->eventDispatcher;
+    }
+
+    /**
+     *
+     * @param EventDispatcher $eventDispatcher
+     */
+    public function setEventDispatcher($eventDispatcher)
+    {
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -240,7 +300,12 @@ class OperationProjectionService
      */
     public function updateOperationProjections()
     {
+
+        $logger = $this->getLog();
+
         $datetimeProjection = new \DateTime();
+
+        $logger->info('Updating operation projections based on latest passage projections at ' . $datetimeProjection->format('Y-m-d H:i:s'));
 
         $tableManager = $this->getTableManager();
 
@@ -330,7 +395,9 @@ class OperationProjectionService
                     // determine new event id
                     $lastProjectedOperationId = $this->getLastOperationProjectionId();
                     $nextProjectedOperationId = $lastProjectedOperationId + 1;
-                    $eventId = 'BONL01_' . $bridge->getIsrsCode() . '_' . $nextProjectedOperationId;
+                    $eventId = ProjectedOperation::EVENT_PREFIX . '_' . $bridge->getIsrsCode() . '_' . $nextProjectedOperationId;
+
+                    $logger->info('New event ' . $eventId . ' for bridge ' . $bridge->getId());
                 }
 
                 $operationProjectionValues = [];
@@ -358,6 +425,10 @@ class OperationProjectionService
 
                 // store latest version by event id
                 $latestVersionByEventId[$eventId] = $version;
+
+                // notify listeners
+                $eventDispatcher = $this->getEventDispatcher();
+                $eventDispatcher->postEvent('OperationProjection.update', array($eventId));
             }
 
             $futureOperationsByBridge[$bridgeId] = $operationProjections;
@@ -376,6 +447,10 @@ class OperationProjectionService
                         continue;
                     }
 
+                    if ($existingOperationProjection->getTimeStart()->getTimestamp() < $datetimeProjection->getTimestamp()) {
+                        continue;
+                    }
+
                     if (!$newerVersionExists) {
 
                         // create new version with certainty 0
@@ -391,10 +466,17 @@ class OperationProjectionService
 
                         // insert new operation projection
                         $tableManager->insertRecord('bo_operation_projection', $operationProjectionValues);
+
+                        $logger->info('Marking event ' . $eventId . ' as no longer current');
+
+                        $eventDispatcher = $this->getEventDispatcher();
+                        $eventDispatcher->postEvent('OperationProjection.update', array($eventId));
                     }
                 }
             }
         }
+
+        $logger->info('Done updating operation projections based on latest passage projections at ' . $datetimeProjection->format('Y-m-d H:i:s'));
     }
 
     /**
