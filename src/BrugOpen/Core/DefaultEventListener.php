@@ -64,6 +64,7 @@ class DefaultEventListener
         $serviceRegistry->registerServiceFactory('BrugOpen.JourneyDataStore', $serviceFactory);
         $serviceRegistry->registerServiceFactory('BrugOpen.NdwQueueProcessor', $serviceFactory);
         $serviceRegistry->registerServiceFactory('BrugOpen.OperationIndexService', $serviceFactory);
+        $serviceRegistry->registerServiceFactory('BrugOpen.OperationProjectionService', $serviceFactory);
         $serviceRegistry->registerServiceFactory('BrugOpen.PassageService', $serviceFactory);
         $serviceRegistry->registerServiceFactory('BrugOpen.VesselPositionProcessor', $serviceFactory);
         $serviceRegistry->registerServiceFactory('BrugOpen.WaterwayService', $serviceFactory);
