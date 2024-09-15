@@ -1,9 +1,13 @@
 <?php
+
 namespace BrugOpen\Core;
 
+use BrugOpen\Model\Operation;
 use BrugOpen\Ndw\Service\NdwQueueProcessor;
 use BrugOpen\Ndw\Service\SituationEventProcessor;
 use BrugOpen\Ndw\Service\SituationProcessor;
+use BrugOpen\Projection\Service\OperationProjectionEventProcessor;
+use BrugOpen\Projection\Service\OperationProjectionService;
 use BrugOpen\Service\BridgeIndexService;
 use BrugOpen\Service\BridgeService;
 use BrugOpen\Service\OperationIndexService;
@@ -33,14 +37,12 @@ class DefaultServiceFactory implements ServiceFactory
             $bridgePassageCalculator->initialize($context);
 
             $service = $bridgePassageCalculator;
-
         } else if ($serviceName == 'BrugOpen.BridgeService') {
 
             $bridgeService = new BridgeService();
             $bridgeService->initialize($context);
 
             $service = $bridgeService;
-
         } else if ($serviceName == 'BrugOpen.NdwQueueProcessor') {
 
             $queueProcessor = new NdwQueueProcessor($context);
@@ -57,28 +59,24 @@ class DefaultServiceFactory implements ServiceFactory
             $queueProcessor->setSituationProcessor($situationProcessor);
 
             $service = $queueProcessor;
-
         } else if ($serviceName == 'BrugOpen.JourneyDataStore') {
 
             $journeyDataStore = new JourneyDataStore();
             $journeyDataStore->initialize($context);
 
             $service = $journeyDataStore;
-
         } else if ($serviceName == 'BrugOpen.OperationIndexService') {
 
             $operationIndexService = new OperationIndexService();
             $operationIndexService->initialize($context);
 
             $service = $operationIndexService;
-
         } else if ($serviceName == 'BrugOpen.PassageService') {
 
             $passageService = new PassageService();
             $passageService->initialize($context);
 
             $service = $passageService;
-
         } else if ($serviceName == 'BrugOpen.VesselPositionProcessor') {
 
             $vesselPositionProcessor = new VesselPositionProcessor();
@@ -95,14 +93,22 @@ class DefaultServiceFactory implements ServiceFactory
             $context->getEventDispatcher()->addObserver('Journey.passage', array($bridgeEventProcessor, 'onBridgePassage'));
 
             $service = $vesselPositionProcessor;
+        } else if ($serviceName == 'BrugOpen.OperationProjectionService') {
 
+            $operationProjectionService = new OperationProjectionService();
+            $operationProjectionService->initialize($context);
+
+            $operationProjectionEventProcessor = new OperationProjectionEventProcessor($context);
+
+            $context->getEventDispatcher()->addObserver('OperationProjection.update', array($operationProjectionEventProcessor, 'onOperationProjectionUpdated'));
+
+            $service = $operationProjectionService;
         } else if ($serviceName == 'BrugOpen.WaterwayService') {
 
             $waterwayService = new WaterwayService();
             $waterwayService->initialize($context);
 
             $service = $waterwayService;
-
         }
 
         return $service;
