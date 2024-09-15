@@ -4,6 +4,9 @@ namespace BrugOpen\Projection\Model;
 
 class ProjectedOperation
 {
+
+    const EVENT_PREFIX = 'BONL01';
+
     /**
      * @var int
      */
