@@ -400,35 +400,43 @@ class OperationProjectionService
                     $logger->info('New event ' . $eventId . ' for bridge ' . $bridge->getId());
                 }
 
-                $operationProjectionValues = [];
+                if (strpos($eventId, ProjectedOperation::EVENT_PREFIX . '_') === 0) {
 
-                $operationProjectionValues['event_id'] = $eventId;
-                $operationProjectionValues['version'] = $version;
-                $operationProjectionValues['bridge_id'] = $bridgeId;
-                $operationProjectionValues['time_start'] = $operationProjection->getTimeStart();
-                $operationProjectionValues['time_end'] = $operationProjection->getTimeEnd();
-                $operationProjectionValues['certainty'] = $operationProjection->getCertainty();
-                $operationProjectionValues['datetime_projection'] = $datetimeProjection;
+                    $operationProjectionValues = [];
 
-                // insert new operation projection
-                $tableManager->insertRecord('bo_operation_projection', $operationProjectionValues);
+                    $operationProjectionValues['event_id'] = $eventId;
+                    $operationProjectionValues['version'] = $version;
+                    $operationProjectionValues['bridge_id'] = $bridgeId;
+                    $operationProjectionValues['time_start'] = $operationProjection->getTimeStart();
+                    $operationProjectionValues['time_end'] = $operationProjection->getTimeEnd();
+                    $operationProjectionValues['certainty'] = $operationProjection->getCertainty();
+                    $operationProjectionValues['datetime_projection'] = $datetimeProjection;
 
-                // update event id in projected passages
-                $projectedPassages = $operationProjection->getProjectedPassages();
+                    $logger->info('Inserting version ' . $version . ' for event ' . $eventId . ' at bridge ' . $bridge->getId());
 
-                foreach ($projectedPassages as $projectedPassage) {
-                    $values = [];
-                    $values['event_id'] = $eventId;
-                    $keys = ['id' => $projectedPassage->getId()];
-                    $tableManager->updateRecords('bo_passage_projection', $values, $keys);
+                    // insert new operation projection
+                    $tableManager->insertRecord('bo_operation_projection', $operationProjectionValues);
+
+                    // update event id in projected passages
+                    $projectedPassages = $operationProjection->getProjectedPassages();
+
+                    foreach ($projectedPassages as $projectedPassage) {
+                        $values = [];
+                        $values['event_id'] = $eventId;
+                        $keys = ['id' => $projectedPassage->getId()];
+                        $tableManager->updateRecords('bo_passage_projection', $values, $keys);
+                    }
+
+                    // store latest version by event id
+                    $latestVersionByEventId[$eventId] = $version;
+
+                    // notify listeners
+                    $eventDispatcher = $this->getEventDispatcher();
+                    $eventDispatcher->postEvent('OperationProjection.update', array($eventId));
+                } else {
+
+                    $logger->info("Projected operation for bridge " . $bridgeId . " matches with operation " . $eventId);
                 }
-
-                // store latest version by event id
-                $latestVersionByEventId[$eventId] = $version;
-
-                // notify listeners
-                $eventDispatcher = $this->getEventDispatcher();
-                $eventDispatcher->postEvent('OperationProjection.update', array($eventId));
             }
 
             $futureOperationsByBridge[$bridgeId] = $operationProjections;
