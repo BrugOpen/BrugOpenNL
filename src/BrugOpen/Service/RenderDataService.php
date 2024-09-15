@@ -371,7 +371,7 @@ class RenderDataService
             if ($lastOperation['start'] < $now) {
                 $bodyText .= ' was het laatst open ';
             } else {
-                $bodyText .= ' gaat open ';
+                $bodyText .= ' gaat ' . ($lastOperation['certainty'] < 3 ? 'mogelijk ' : '') . ' open ';
             }
 
             if ((time() - $lastOperation['start']) < (3600 * 24)) {
@@ -481,6 +481,10 @@ class RenderDataService
 
             $dateTimeStart = $operation['start'];
 
+            if ($dateTimeStart > $now) {
+                continue;
+            }
+
             $startedToday = false;
             if (($now - $dateTimeStart) < (3600 * 24)) {
                 $startedToday = true;
@@ -501,6 +505,10 @@ class RenderDataService
             $nowOpen = false;
 
             $dateTimeStart = $operation['start'];
+
+            if ($dateTimeStart > $now) {
+                continue;
+            }
 
             $startedToday = false;
             if ((time() - $dateTimeStart) < (3600 * 24)) {
