@@ -2,7 +2,6 @@
 
 namespace BrugOpen\Core;
 
-use BrugOpen\Model\Operation;
 use BrugOpen\Ndw\Service\NdwQueueProcessor;
 use BrugOpen\Ndw\Service\SituationEventProcessor;
 use BrugOpen\Ndw\Service\SituationProcessor;
