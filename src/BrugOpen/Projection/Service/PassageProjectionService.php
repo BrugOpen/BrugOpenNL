@@ -409,6 +409,16 @@ class PassageProjectionService
 
         $segments = $activeJourney->getJourneySegments();
 
+        $journeySegments = $activeJourney->getJourneySegments();
+
+        $journeyReconstructor = $this->getJourneyReconstructor();
+
+        $allSegmentsConnected = $journeyReconstructor->journeySegmentsConnected($activeJourney);
+
+        if (!$allSegmentsConnected) {
+            $segments = $journeyReconstructor->reconstructJourneySegments($activeJourney);
+        }
+
         if (count($segments) > 1) {
 
             $currentSegmentId = $segments[count($segments) - 1]->getSegmentId();
@@ -422,7 +432,6 @@ class PassageProjectionService
             $mmsi = $activeJourney->getVessel()->getMmsi();
 
             $journeyArchiveStore = $this->getJourneyArchiveStore();
-            $journeyReconstructor = $this->getJourneyReconstructor();
             $journeyProjector = $this->getJourneyProjector();
 
             $numPastJourneys = 0;
@@ -495,17 +504,9 @@ class PassageProjectionService
 
                 // find longest single track, project passages based on current journey
 
-                $journeySegments = $activeJourney->getJourneySegments();
-
-                $allSegmentsConnected = $journeyReconstructor->journeySegmentsConnected($activeJourney);
-
-                if (!$allSegmentsConnected) {
-                    $journeySegments = $journeyReconstructor->reconstructJourneySegments($activeJourney);
-                }
-
                 $journeySegmentIds = array();
 
-                foreach ($journeySegments as $segment) {
+                foreach ($segments as $segment) {
 
                     $journeySegmentIds[] = $segment->getSegmentId();
                 }
