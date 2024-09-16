@@ -201,7 +201,7 @@ class OperationProjectionEventProcessor
 
                 // check if operation from other source already exists for this projection
 
-                $startingFrom = new \DateTime('@' . ($timeStart - 120));
+                $startingFrom = new \DateTime('@' . ($timeStart - 600));
 
                 $existingOperations = $this->loadCurrentOperationsByBridge($bridgeId, $startingFrom);
 
@@ -220,21 +220,25 @@ class OperationProjectionEventProcessor
                         $existingOperationTimeStart = $existingOperation->getDateTimeStart() ? $existingOperation->getDateTimeStart()->getTimestamp() : null;
                         $existingOperationTimeEnd = $existingOperation->getDateTimeEnd() ? $existingOperation->getDateTimeEnd()->getTimestamp() : null;
 
-                        if ($existingOperationTimeStart >= $machingTimeStart && $existingOperationTimeStart <= $matchingTimeEnd) {
+                        if ($existingOperationTimeEnd == null) {
 
-                            if ($existingOperationTimeEnd) {
-
-                                if ($existingOperationTimeEnd >= $machingTimeStart && $existingOperationTimeEnd <= $matchingTimeEnd) {
-
-                                    $operationId = $existingOperation->getId();
-                                }
-                            } else {
-
-                                $operationId = $existingOperation->getId();
-                            }
+                            // assume existing operation takes as long as the projection
+                            $existingOperationTimeEnd = $existingOperationTimeStart + ($timeEnd - $timeStart);
                         }
 
-                        if ($operationId) {
+                        $operationMatches = false;
+
+                        if ($existingOperationTimeStart >= $machingTimeStart && $existingOperationTimeStart <= $matchingTimeEnd) {
+                            $operationMatches = true;
+                        } else if ($existingOperationTimeEnd >= $machingTimeStart && $existingOperationTimeEnd <= $matchingTimeEnd) {
+                            $operationMatches = true;
+                        } else if ($existingOperationTimeStart <= $machingTimeStart && $existingOperationTimeEnd >= $matchingTimeEnd) {
+                            $operationMatches = true;
+                        }
+
+                        if ($operationMatches) {
+
+                            $operationId = $existingOperation->getId();
                             break;
                         }
                     }
@@ -553,24 +557,5 @@ class OperationProjectionEventProcessor
         }
 
         return $currentOperationsByBridge;
-    }
-
-    /**
-     * @param \DateTime $startTime1
-     * @param \DateTime $endTime1
-     * @param \DateTime $startTime2
-     * @param \DateTime $endTime2
-     */
-    public function calculateGap($startTime1, $endTime1, $startTime2, $endTime2)
-    {
-        $gap = 0;
-
-        if ($endTime1->getTimestamp() < $startTime2->getTimestamp()) {
-            $gap = $startTime2->getTimestamp() - $endTime1->getTimestamp();
-        } else if ($endTime2->getTimestamp() < $startTime1->getTimestamp()) {
-            $gap = $startTime1->getTimestamp() - $endTime2->getTimestamp();
-        }
-
-        return $gap;
     }
 }
