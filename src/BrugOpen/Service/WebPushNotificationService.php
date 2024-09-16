@@ -735,6 +735,10 @@ class WebPushNotificationService
     {
         $title = $bridge['title'];
 
+        if (array_key_exists('distinctive_title', $bridge) && ($bridge['distinctive_title'] != '')) {
+            $title = $bridge['distinctive_title'];
+        }
+
         return $title;
     }
 
