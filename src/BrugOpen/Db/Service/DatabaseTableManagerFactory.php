@@ -61,6 +61,7 @@ class DatabaseTableManagerFactory implements ServiceFactory
         $config['bo_bridge']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_bridge']['name'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['title'] = DatabaseTableManager::COLUMN_STR;
+        $config['bo_bridge']['distinctive_title'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['province'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['province2'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['city'] = DatabaseTableManager::COLUMN_STR;
