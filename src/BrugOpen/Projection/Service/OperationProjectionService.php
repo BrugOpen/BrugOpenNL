@@ -380,6 +380,8 @@ class OperationProjectionService
                         if ($gap <= $maxGap) {
                             $matchingEventId = $existingOperationProjection->getEventId();
                             $version = $existingOperationProjection->getVersion() + 1;
+
+                            $logger->info('Found existing operation ' . $matchingEventId . ' for bridge ' . $bridge->getId() . ' with gap ' . $gap . ' seconds, next version ' . $version);
                         }
 
                         if ($matchingEventId) {
