@@ -626,7 +626,7 @@ class WebPushNotificationService
                 $operationAnnounceText = 'gaat open';
 
                 if ($certainty == 2) {
-                    $operationAnnounceText = 'gaat waarschijnlijk open';
+                    $operationAnnounceText = 'gaat mogelijk open';
                 }
 
                 if (($durationSecs > 60) && ($durationSecs < 3600)) {
