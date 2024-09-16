@@ -116,6 +116,7 @@ class BridgeService
                     $bridge->setId($bridgeId);
                     $bridge->setName($row['name']);
                     $bridge->setTitle($row['title']);
+                    $bridge->setDistinctiveTitle($row['distinctive_title']);
                     $bridge->setCity($row['city']);
                     $bridge->setCity2($row['city2']);
 
