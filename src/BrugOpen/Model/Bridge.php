@@ -26,6 +26,11 @@ class Bridge
     private $title;
 
     /**
+     * @var string
+     */
+    private $distinctiveTitle;
+
+    /**
      *
      * @var string
      */
@@ -126,6 +131,22 @@ class Bridge
     public function setTitle($title)
     {
         $this->title = $title;
+    }
+
+    /**
+     * @return string
+     */
+    public function getDistinctiveTitle()
+    {
+        return $this->distinctiveTitle;
+    }
+
+    /**
+     * @param string $distinctiveTitle
+     */
+    public function setDistinctiveTitle($distinctiveTitle)
+    {
+        $this->distinctiveTitle = $distinctiveTitle;
     }
 
     /**
