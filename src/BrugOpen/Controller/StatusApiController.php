@@ -148,6 +148,11 @@ class StatusApiController implements ContextAware
                         // $bridgeData['id'] = $bridge->getId();
                         $bridgeData['name'] = $bridgeName;
                         $bridgeData['title'] = $bridge->getTitle();
+
+                        if ($bridge->getDistinctiveTitle()) {
+                            $bridgeData['distinctiveTitle'] = $bridge->getDistinctiveTitle();
+                        }
+
                         $bridgeData['city'] = $bridge->getCity();
 
                         if ($bridge->getCity2()) {
