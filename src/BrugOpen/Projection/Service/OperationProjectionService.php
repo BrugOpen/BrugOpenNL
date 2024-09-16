@@ -314,8 +314,11 @@ class OperationProjectionService
         // load passage projections by bridge
         $passageProjectionsByBridge = $this->loadPassageProjectionsByBridge();
 
+        // load last operation projections
+        $lastOperationProjections = $this->loadLastOperationProjections();
+
         // load existing operation projections by bridge
-        $existingOperationProjectionsByBridge = $this->loadCurrentOperationProjectionsByBridge();
+        $lastOperationProjectionsByBridge = $this->getOperationProjectionsByBridge($lastOperationProjections);
 
         // load future operations by bridge
         $futureOperationsByBridge = $this->loadFutureOperationsByBridge();
@@ -367,7 +370,7 @@ class OperationProjectionService
 
                     // look for existing operation projection with about the same time start and time end
 
-                    $existingOperationProjections = isset($existingOperationProjectionsByBridge[$bridgeId]) ? $existingOperationProjectionsByBridge[$bridgeId] : [];
+                    $existingOperationProjections = isset($lastOperationProjectionsByBridge[$bridgeId]) ? $lastOperationProjectionsByBridge[$bridgeId] : [];
 
                     foreach ($existingOperationProjections as $existingOperationProjection) {
 
@@ -445,9 +448,9 @@ class OperationProjectionService
 
             // check for operations that are no longer current
 
-            if (isset($existingOperationProjectionsByBridge[$bridgeId])) {
+            if (isset($lastOperationProjectionsByBridge[$bridgeId])) {
 
-                $existingOperationProjections = $existingOperationProjectionsByBridge[$bridgeId];
+                $existingOperationProjections = $lastOperationProjectionsByBridge[$bridgeId];
 
                 foreach ($existingOperationProjections as $existingOperationProjection) {
                     $eventId = $existingOperationProjection->getEventId();
@@ -512,7 +515,10 @@ class OperationProjectionService
         return $passageProjectionsByBridge;
     }
 
-    public function loadCurrentProjections()
+    /**
+     * @return ProjectedOperation[]
+     */
+    public function loadLastOperationProjections()
     {
 
         $tableManager = $this->getTableManager();
@@ -579,16 +585,15 @@ class OperationProjectionService
     }
 
     /**
+     * @param ProjectedOperation[] $operationProjections
      * @return ProjectedOperation[][]
      */
-    public function loadCurrentOperationProjectionsByBridge()
+    public function getOperationProjectionsByBridge($operationProjections)
     {
         // load operation projections by bridge
         $operationProjectionsByBridge = [];
 
-        $currentOperationProjections = $this->loadCurrentProjections();
-
-        foreach ($currentOperationProjections as $operationProjection) {
+        foreach ($operationProjections as $operationProjection) {
             $bridgeId = $operationProjection->getBridgeId();
             if (!isset($operationProjectionsByBridge[$bridgeId])) {
                 $operationProjectionsByBridge[$bridgeId] = [];
