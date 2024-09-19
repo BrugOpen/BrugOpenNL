@@ -2,8 +2,11 @@
 
 namespace BrugOpen\Projection\Service;
 
+use BrugOpen\Core\TestEventDispatcher;
+use BrugOpen\Db\Service\MemoryTableManager;
 use BrugOpen\Model\Bridge;
 use BrugOpen\Projection\Model\ProjectedBridgePassage;
+use Monolog\Handler\NullHandler;
 use PHPUnit\Framework\TestCase;
 
 class OperationProjectionServiceTest extends TestCase
@@ -192,5 +195,84 @@ class OperationProjectionServiceTest extends TestCase
         $this->assertNotEmpty($projectedBridgePassages);
         $this->assertCount(1, $projectedBridgePassages);
         $this->assertEquals(234, $projectedBridgePassages[0]->getId());
+    }
+
+    public function testUpdateOperationProjections()
+    {
+
+        $operationProjectionService = new OperationProjectionService();
+
+        // set table manager
+        $tableManager = new MemoryTableManager();
+        $operationProjectionService->setTableManager($tableManager);
+
+        // add event recorder
+        $eventDispatcher = new TestEventDispatcher();
+        $operationProjectionService->setEventDispatcher($eventDispatcher);
+
+        // set projected passage data store
+        $projectedPassageDataStore = new ProjectedPassageDataStore();
+        $projectedPassageDataStore->setTableManager($tableManager);
+        $operationProjectionService->setProjectedPassageDataStore($projectedPassageDataStore);
+
+        // set null logger
+        $logger = new \Monolog\Logger('OperationProjectionEventProcessor');
+        $logger->setHandlers(array(new NullHandler()));
+        $operationProjectionService->setLog($logger);
+
+        $record = [];
+        $record['id'] = 9;
+        $record['announce_approach'] = 1;
+        $record['isrs_code'] = 'NLAMB002120533600182';
+
+        $tableManager->insertRecord('bo_bridge', $record);
+
+        // create passage projection
+        $record = [];
+        $record['id'] = 452440;
+        $record['journey_id'] = '234567890-1726502736';
+        $record['bridge_id'] = 9;
+        $record['datetime_passage'] = new \DateTime('2024-09-16 21:12:51');
+        $record['standard_deviation'] = 44;
+        $record['operation_probability'] = 0.875;
+        $record['event_id'] = null;
+        $record['datetime_projection'] = new \DateTime('2024-09-16 20:43:01');
+
+        $tableManager->insertRecord('bo_passage_projection', $record);
+
+        // create previous operation projection
+        $record = [];
+        $record['id'] = 37386;
+        $record['event_id'] = 'BONL01_NLSPL002120533400126_37349';
+        $record['version'] = 12;
+        $record['operation_id'] = 5986870;
+        $record['bridge_id'] = 8;
+        $record['certainty'] = 2;
+        $record['time_start'] = new \DateTime('2024-09-16 20:21:12');
+        $record['time_end'] = new \DateTime('2024-09-16 20:25:12');
+        $record['datetime_projection'] = new \DateTime('2024-09-16 20:23:10');
+
+        $tableManager->insertRecord('bo_operation_projection', $record);
+
+        $tableManager->setAutoIncrement('bo_operation_projection', 'id', 37387);
+
+        $datetimeProjection = new \DateTime('2024-09-16 20:43:02');
+
+        $operationProjectionService->updateOperationProjections($datetimeProjection);
+
+        // check if operation projection is created
+        $operationProjections = $tableManager->findRecords('bo_operation_projection', ['id' => 37387]);
+        $this->assertCount(1, $operationProjections);
+
+        $operationProjection = $operationProjections[0];
+        $this->assertEquals(37387, $operationProjection['id']);
+        $this->assertEquals('BONL01_NLAMB002120533600182_37387', $operationProjection['event_id']);
+        $this->assertEquals(1, $operationProjection['version']);
+        $this->assertEquals(null, $operationProjection['operation_id']);
+        $this->assertEquals(9, $operationProjection['bridge_id']);
+        $this->assertEquals(2, $operationProjection['certainty']);
+        $this->assertEquals(1726513851, $operationProjection['time_start']->getTimestamp());
+        $this->assertEquals(1726514091, $operationProjection['time_end']->getTimestamp());
+        $this->assertEquals(1726512182, $operationProjection['datetime_projection']->getTimestamp());
     }
 }
