@@ -463,13 +463,16 @@ class OperationProjectionEventProcessor
 
             $values = array();
 
-            $values['datetime_start'] = null;
-            $values['time_start'] = null;
-            $values['datetime_end'] = null;
-            $values['time_end'] = null;
-            $values['datetime_gone'] = null;
-            $values['time_gone'] = null;
-            $values['certainty'] = null;
+            if (!$operationId) {
+
+                $values['datetime_start'] = null;
+                $values['time_start'] = null;
+                $values['datetime_end'] = null;
+                $values['time_end'] = null;
+                $values['datetime_gone'] = null;
+                $values['time_gone'] = null;
+                $values['certainty'] = null;
+            }
 
             if ($eventId) {
 
