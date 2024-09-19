@@ -6,6 +6,7 @@ use BrugOpen\Db\Model\Criterium;
 use BrugOpen\Db\Model\CriteriumFieldComparison;
 use BrugOpen\Db\Service\TableManager;
 use BrugOpen\Model\Bridge;
+use BrugOpen\Model\Operation;
 use BrugOpen\Projection\Model\ProjectedBridgePassage;
 use BrugOpen\Projection\Model\ProjectedOperation;
 
@@ -85,6 +86,14 @@ class OperationProjectionService
     }
 
     /**
+     * @param ProjectedPassageDataStore $projectedPassageDataStore
+     */
+    public function setProjectedPassageDataStore($projectedPassageDataStore)
+    {
+        $this->projectedPassageDataStore = $projectedPassageDataStore;
+    }
+
+    /**
      * @return TableManager
      */
     public function getTableManager()
@@ -93,6 +102,14 @@ class OperationProjectionService
             $this->tableManager = $this->context->getService('BrugOpen.TableManager');
         }
         return $this->tableManager;
+    }
+
+    /**
+     * @param TableManager $tableManager
+     */
+    public function setTableManager($tableManager)
+    {
+        $this->tableManager = $tableManager;
     }
 
     /**
@@ -297,13 +314,16 @@ class OperationProjectionService
 
     /**
      * Update operation projections based on latest passage projections
+     * @param \DateTime $datetimeProjection
      */
-    public function updateOperationProjections()
+    public function updateOperationProjections($datetimeProjection = null)
     {
 
         $logger = $this->getLog();
 
-        $datetimeProjection = new \DateTime();
+        if ($datetimeProjection === null) {
+            $datetimeProjection = new \DateTime();
+        }
 
         $logger->info('Updating operation projections based on latest passage projections at ' . $datetimeProjection->format('Y-m-d H:i:s'));
 
@@ -312,7 +332,7 @@ class OperationProjectionService
         $bridgesWithPassageProjections = $this->loadProjectableBridges();
 
         // load passage projections by bridge
-        $passageProjectionsByBridge = $this->loadPassageProjectionsByBridge();
+        $passageProjectionsByBridge = $this->loadPassageProjectionsByBridge($datetimeProjection->getTimestamp());
 
         // load last operation projections
         $lastOperationProjections = $this->loadLastOperationProjections();
@@ -355,7 +375,7 @@ class OperationProjectionService
 
                 foreach ($futureOperations as $futureOperation) {
 
-                    $gap = $this->calculateGap($operationProjection->getTimeStart(), $operationProjection->getTimeEnd(), $futureOperation->getTimeStart(), $futureOperation->getTimeEnd());
+                    $gap = $this->calculateGap($operationProjection->getTimeStart(), $operationProjection->getTimeEnd(), $futureOperation->getDateTimeStart(), $futureOperation->getDateTimeEnd());
 
                     if ($gap <= $maxGap) {
                         $matchingEventId = $futureOperation->getEventId();
@@ -493,16 +513,17 @@ class OperationProjectionService
     }
 
     /**
+     * @param int $time
      * @return ProjectedBridgePassage[][]
      */
-    public function loadPassageProjectionsByBridge()
+    public function loadPassageProjectionsByBridge($time = null)
     {
         // load passage projections by bridge
         $passageProjectionsByBridge = [];
 
         $projectedPassageDataStore = $this->getProjectedPassageDataStore();
 
-        $currentPassageProjections = $projectedPassageDataStore->loadCurrentPassageProjections();
+        $currentPassageProjections = $projectedPassageDataStore->loadCurrentPassageProjections($time);
 
         foreach ($currentPassageProjections as $passageProjection) {
             $bridgeId = $passageProjection->getBridgeId();
@@ -538,7 +559,7 @@ class OperationProjectionService
             if ($lastId !== null) {
                 $criteria[] = new CriteriumFieldComparison('id', Criterium::OPERATOR_LT, $lastId);
             }
-            $records = $tableManager->findRecords('bo_operation_projection', null, $criteria, $orders, $limit);
+            $records = $tableManager->findRecords('bo_operation_projection', $criteria, null, $orders, $limit);
 
             $lastId = null;
 
@@ -604,6 +625,9 @@ class OperationProjectionService
         return $operationProjectionsByBridge;
     }
 
+    /**
+     * @return Operation[][]
+     */
     public function loadFutureOperationsByBridge()
     {
         // load future operations by bridge
@@ -627,12 +651,12 @@ class OperationProjectionService
 
                 $operationIds[] = $operationId;
 
-                $operation = new ProjectedOperation();
+                $operation = new Operation();
                 $operation->setId($operationId);
                 $operation->setEventId($record['event_id']);
                 $operation->setBridgeId($record['bridge_id']);
-                $operation->setTimeStart($record['time_start']);
-                $operation->setTimeEnd($record['time_end']);
+                $operation->setDateTimeStart($record['time_start']);
+                $operation->setDateTimeEnd($record['time_end']);
                 $operation->setCertainty($record['certainty']);
 
                 $futureOperationsByBridge[$operation->getBridgeId()][] = $operation;
