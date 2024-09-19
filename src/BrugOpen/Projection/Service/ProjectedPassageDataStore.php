@@ -43,6 +43,15 @@ class ProjectedPassageDataStore
     }
 
     /**
+     *
+     * @param \BrugOpen\Db\Service\TableManager $tableManager
+     */
+    public function setTableManager($tableManager)
+    {
+        $this->tableManager = $tableManager;
+    }
+
+    /**
      * @param ProjectedBridgePassage $passageProjection
      */
     public function storePassageProjection($passageProjection)
@@ -157,15 +166,19 @@ class ProjectedPassageDataStore
     /**
      * @return ProjectedBridgePassage[]
      */
-    public function loadCurrentPassageProjections()
+    public function loadCurrentPassageProjections($time = null)
     {
         $passageProjections = array();
 
         $tableManager = $this->getTableManager();
 
+        if ($time == null) {
+            $time = time();
+        }
+
         $lastId = null;
         $limit = 1000;
-        $onlySince = time() - 60;
+        $onlySince = $time - 60;
         do {
 
             $orders = array(array('id', 'DESC'));
@@ -173,7 +186,8 @@ class ProjectedPassageDataStore
             if ($lastId !== null) {
                 $criteria[] = new CriteriumFieldComparison('id', Criterium::OPERATOR_LT, $lastId);
             }
-            $records = $tableManager->findRecords('bo_passage_projection', null, $criteria, $orders, $limit);
+
+            $records = $tableManager->findRecords('bo_passage_projection', $criteria, null, $orders, $limit);
 
             $lastId = null;
 
