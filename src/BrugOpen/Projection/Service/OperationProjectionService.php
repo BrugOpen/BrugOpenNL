@@ -341,7 +341,7 @@ class OperationProjectionService
         $lastOperationProjectionsByBridge = $this->getOperationProjectionsByBridge($lastOperationProjections);
 
         // load future operations by bridge
-        $futureOperationsByBridge = $this->loadFutureOperationsByBridge();
+        $futureOperationsByBridge = $this->loadFutureOperationsByBridge($datetimeProjection->getTimestamp());
 
         $minOperationProbability = 0.5; // 50%
         $maxStandardDeviation = 90; // 90 seconds
@@ -386,11 +386,23 @@ class OperationProjectionService
                     }
                 }
 
+                $existingOperationProjections = isset($lastOperationProjectionsByBridge[$bridgeId]) ? $lastOperationProjectionsByBridge[$bridgeId] : [];
+
+                // adjust version if needed
+                if ($matchingEventId) {
+                    if ($existingOperationProjections) {
+                        foreach ($existingOperationProjections as $existingOperationProjection) {
+                            if ($existingOperationProjection->getEventId() == $matchingEventId) {
+                                $version = $existingOperationProjection->getVersion() + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+
                 if ($matchingEventId == null) {
 
                     // look for existing operation projection with about the same time start and time end
-
-                    $existingOperationProjections = isset($lastOperationProjectionsByBridge[$bridgeId]) ? $lastOperationProjectionsByBridge[$bridgeId] : [];
 
                     foreach ($existingOperationProjections as $existingOperationProjection) {
 
@@ -626,9 +638,10 @@ class OperationProjectionService
     }
 
     /**
+     * @param int $time
      * @return Operation[][]
      */
-    public function loadFutureOperationsByBridge()
+    public function loadFutureOperationsByBridge($time = null)
     {
         // load future operations by bridge
 
@@ -637,6 +650,10 @@ class OperationProjectionService
         $tableManager = $this->getTableManager();
 
         $now = new \DateTime();
+
+        if ($time !== null) {
+            $now = new \DateTime('@' . $time);
+        }
 
         $criteria = array();
         $criteria[] = new CriteriumFieldComparison('time_start', Criterium::OPERATOR_GE, $now);

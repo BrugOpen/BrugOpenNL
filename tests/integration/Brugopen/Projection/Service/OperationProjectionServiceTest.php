@@ -197,7 +197,7 @@ class OperationProjectionServiceTest extends TestCase
         $this->assertEquals(234, $projectedBridgePassages[0]->getId());
     }
 
-    public function testUpdateOperationProjections()
+    public function testUpdateOperationProjectionsFirstProjectionVersion()
     {
 
         $operationProjectionService = new OperationProjectionService();
@@ -274,5 +274,99 @@ class OperationProjectionServiceTest extends TestCase
         $this->assertEquals(1726513851, $operationProjection['time_start']->getTimestamp());
         $this->assertEquals(1726514091, $operationProjection['time_end']->getTimestamp());
         $this->assertEquals(1726512182, $operationProjection['datetime_projection']->getTimestamp());
+    }
+
+    public function testUpdateOperationProjectionsSecondProjectionVersion()
+    {
+
+        $operationProjectionService = new OperationProjectionService();
+
+        // set table manager
+        $tableManager = new MemoryTableManager();
+        $operationProjectionService->setTableManager($tableManager);
+
+        // add event recorder
+        $eventDispatcher = new TestEventDispatcher();
+        $operationProjectionService->setEventDispatcher($eventDispatcher);
+
+        // set projected passage data store
+        $projectedPassageDataStore = new ProjectedPassageDataStore();
+        $projectedPassageDataStore->setTableManager($tableManager);
+        $operationProjectionService->setProjectedPassageDataStore($projectedPassageDataStore);
+
+        // set null logger
+        $logger = new \Monolog\Logger('OperationProjectionEventProcessor');
+        $logger->setHandlers(array(new NullHandler()));
+        $operationProjectionService->setLog($logger);
+
+        $record = [];
+        $record['id'] = 9;
+        $record['announce_approach'] = 1;
+        $record['isrs_code'] = 'NLAMB002120533600182';
+        $record['title'] = 'Aalsmeerderbrug';
+        $record['active'] = 1;
+        $record['city'] = 'Aalsmeerderbrug';
+        $record['city2'] = null;
+
+        $tableManager->insertRecord('bo_bridge', $record);
+
+        // create operation
+        $record = [];
+        $record['id'] = 5986953;
+        $record['event_id'] = 'BONL01_NLAMB002120533600182_37387';
+        $record['bridge_id'] = 9;
+        $record['certainty'] = 2;
+        $record['time_start'] = new \DateTime('2024-09-16 21:10:51');
+        $record['time_end'] = new \DateTime('2024-09-16 21:14:51');
+
+        $tableManager->insertRecord('bo_operation', $record);
+
+        // create passage projection
+        $record = [];
+        $record['id'] = 452446;
+        $record['journey_id'] = '234567890-1726502736';
+        $record['bridge_id'] = 9;
+        $record['datetime_passage'] = new \DateTime('2024-09-16 21:12:56');
+        $record['standard_deviation'] = 37;
+        $record['operation_probability'] = 0.875;
+        $record['event_id'] = null;
+        $record['datetime_projection'] = new \DateTime('2024-09-16 20:44:01');
+
+        $tableManager->insertRecord('bo_passage_projection', $record);
+
+        // create previous operation projection
+        $record = [];
+        $record['id'] = 37387;
+        $record['event_id'] = 'BONL01_NLAMB002120533600182_37387';
+        $record['version'] = 1;
+        $record['operation_id'] = 5986953;
+        $record['bridge_id'] = 9;
+        $record['certainty'] = 2;
+        $record['time_start'] = new \DateTime('2024-09-16 21:10:51');
+        $record['time_end'] = new \DateTime('2024-09-16 21:14:51');
+        $record['datetime_projection'] = new \DateTime('2024-09-16 20:43:09');
+
+        $tableManager->insertRecord('bo_operation_projection', $record);
+
+        $tableManager->setAutoIncrement('bo_operation_projection', 'id', 37388);
+
+        $datetimeProjection = new \DateTime('2024-09-16 20:44:02');
+
+        $operationProjectionService->updateOperationProjections($datetimeProjection);
+
+        // check if operation projection is created
+        $operationProjections = $tableManager->findRecords('bo_operation_projection', ['id' => 37388]);
+        $this->assertCount(1, $operationProjections);
+
+        $operationProjection = $operationProjections[0];
+        $this->assertEquals(37388, $operationProjection['id']);
+        $this->assertEquals('BONL01_NLAMB002120533600182_37387', $operationProjection['event_id']);
+        $this->assertEquals(2, $operationProjection['version']);
+        $this->assertEquals(null, $operationProjection['operation_id']);
+        $this->assertEquals(9, $operationProjection['bridge_id']);
+        $this->assertEquals(2, $operationProjection['certainty']);
+        $this->assertEquals(1726513856, $operationProjection['time_start']->getTimestamp());
+        $this->assertEquals(1726514096, $operationProjection['time_end']->getTimestamp());
+        $this->assertEquals(1726512242, $operationProjection['datetime_projection']->getTimestamp());
     }
 }
