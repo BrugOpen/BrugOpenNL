@@ -388,18 +388,6 @@ class OperationProjectionService
 
                 $existingOperationProjections = isset($lastOperationProjectionsByBridge[$bridgeId]) ? $lastOperationProjectionsByBridge[$bridgeId] : [];
 
-                // adjust version if needed
-                if ($matchingEventId) {
-                    if ($existingOperationProjections) {
-                        foreach ($existingOperationProjections as $existingOperationProjection) {
-                            if ($existingOperationProjection->getEventId() == $matchingEventId) {
-                                $version = $existingOperationProjection->getVersion() + 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-
                 if ($matchingEventId == null) {
 
                     // look for existing operation projection with about the same time start and time end
@@ -427,6 +415,16 @@ class OperationProjectionService
 
                 if ($matchingEventId) {
                     $eventId = $matchingEventId;
+
+                    // adjust version if needed
+                    if ($existingOperationProjections) {
+                        foreach ($existingOperationProjections as $existingOperationProjection) {
+                            if ($existingOperationProjection->getEventId() == $matchingEventId) {
+                                $version = $existingOperationProjection->getVersion() + 1;
+                                break;
+                            }
+                        }
+                    }
                 } else {
 
                     // determine new event id
