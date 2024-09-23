@@ -777,9 +777,12 @@ class WebPushNotificationService
 
             $title = $bridgeTitle . ' was open';
 
+            $operationStart = $operation['time_start']->getTimestamp();
+            $operationEnd = $operation['time_end']->getTimestamp();
+
             $payload = array();
             $payload['title'] = $title;
-            $payload['body'] = 'van ' . $operation['time_start']->format('H:i') . ' tot ' . $operation['time_end']->format('H:i');
+            $payload['body'] = 'van ' . date('H:i', $operationStart) . ' tot ' . date('H:i', $operationEnd);
             $payload['link'] = $targetUrl;
             $payload['tag'] = 'operation' . $operationId;
 
@@ -870,9 +873,12 @@ class WebPushNotificationService
 
             $title = $bridgeTitle . ' was open';
 
+            $operationStart = $operation['time_start']->getTimestamp();
+            $operationEnd = $operation['time_end']->getTimestamp();
+
             $payload = array();
             $payload['title'] = $title;
-            $payload['body'] = 'van ' . $operation['time_start']->format('H:i') . ' tot ' . $operation['time_end']->format('H:i');
+            $payload['body'] = 'van ' . date('H:i', $operationStart) . ' tot ' . date('H:i', $operationEnd);
             $payload['link'] = $targetUrl;
             $payload['tag'] = 'operation' . $operationId;
 
