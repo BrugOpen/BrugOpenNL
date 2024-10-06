@@ -29,240 +29,252 @@ class RenderDataService
 
         $requestUri = $_SERVER['REQUEST_URI'];
 
-        if (substr($requestUri, 0, 1) == '/') {
+        $staticPageRenderData = $this->getStaticPageRenderData($requestUri);
 
-            $requestUri = substr($requestUri, 1);
+        if ($staticPageRenderData) {
+
+            $renderData = $staticPageRenderData;
         }
 
-        while (substr($requestUri, -1) == '/') {
+        if ($renderData == null) {
 
-            $requestUri = substr($requestUri, 0, -1);
-        }
+            if (substr($requestUri, 0, 1) == '/') {
 
-        $urlParts = array();
+                $requestUri = substr($requestUri, 1);
+            }
 
-        if ($requestUri != '') {
+            while (substr($requestUri, -1) == '/') {
 
-            $urlParts = explode('/', $requestUri);
-        }
+                $requestUri = substr($requestUri, 0, -1);
+            }
 
-        $json = file_get_contents('http://localhost:3080');
-        $parsedData = json_decode($json, true);
+            $urlParts = array();
 
-        if (is_array($parsedData)) {
+            if ($requestUri != '') {
 
-            if (count($urlParts) > 0) {
+                $urlParts = explode('/', $requestUri);
+            }
 
-                if (count($urlParts) == 1) {
+            $json = file_get_contents('http://localhost:3080');
+            $parsedData = json_decode($json, true);
 
-                    // check if known bridge
-                    $requestedBridge = null;
+            if (is_array($parsedData)) {
 
-                    foreach ($parsedData['bridges'] as $bridge) {
+                if (count($urlParts) > 0) {
 
-                        if ($bridge['name'] == $urlParts[0]) {
+                    if (count($urlParts) == 1) {
 
-                            $bridge['cityText'] = $this->getBridgeCityText($bridge);
-                            $requestedBridge = $bridge;
-                            break;
-                        }
-                    }
+                        // check if known bridge
+                        $requestedBridge = null;
 
-                    if ($requestedBridge) {
+                        foreach ($parsedData['bridges'] as $bridge) {
 
-                        $renderData = array();
-                        $renderData['contentType'] = 'bridge';
-                        $renderData['pageTitle'] = $requestedBridge['title'] . ' | Brugopen.nl';
-                        $renderData['bridge'] = $requestedBridge;
+                            if ($bridge['name'] == $urlParts[0]) {
 
-                        // get body text
-                        $renderData['body'] = $this->getBridgeBodyText($requestedBridge);
-
-                        $renderData['lastOperations'] = $this->getLastOperations($bridge['lastOperations']);
-
-                        // collect nearby bridges
-
-                        $nearbyBridges = array();
-                        $nearbyBridgesByName = array();
-
-                        if (array_key_exists('nearbyBridges', $requestedBridge)) {
-
-                            foreach ($requestedBridge['nearbyBridges'] as $nearbyBridge) {
-
-                                $nearbyBridgesByName[$nearbyBridge[0]] = $nearbyBridge[1];
-                            }
-                        }
-
-                        foreach ($nearbyBridgesByName as $name => $distance) {
-
-                            foreach ($parsedData['bridges'] as $tmpBridge) {
-
-                                if ($tmpBridge['name'] == $name) {
-
-                                    $tmpBridge['cityText'] = $this->getBridgeCityText($tmpBridge);
-
-                                    if ($distance > 1) {
-
-                                        $distance = number_format($distance, 1, '.', '') . 'km';
-                                    } else {
-
-                                        $distance = round($distance * 10) * 100 . 'm';
-                                    }
-
-                                    $nearbyBridge = array();
-                                    $nearbyBridge['distance'] = $distance;
-                                    $nearbyBridge['bridge'] = $tmpBridge;
-
-                                    $nearbyBridges[] = $nearbyBridge;
-
-                                    if (count($nearbyBridges) == count($nearbyBridgesByName)) {
-                                        break;
-                                    }
-                                }
-                            }
-
-                            if (count($nearbyBridges) == count($nearbyBridgesByName)) {
+                                $bridge['cityText'] = $this->getBridgeCityText($bridge);
+                                $requestedBridge = $bridge;
                                 break;
                             }
                         }
 
-                        $renderData['nearbyBridges'] = $nearbyBridges;
-                        $renderData['now'] = time();
+                        if ($requestedBridge) {
+
+                            $renderData = array();
+                            $renderData['contentType'] = 'bridge';
+                            $renderData['browserTitle'] = $requestedBridge['title'] . ' | Brugopen.nl';
+                            $renderData['pageTitle'] = $requestedBridge['title'];
+                            $renderData['bridge'] = $requestedBridge;
+
+                            // get body text
+                            $renderData['body'] = $this->getBridgeBodyText($requestedBridge);
+
+                            $renderData['lastOperations'] = $this->getLastOperations($bridge['lastOperations']);
+
+                            // collect nearby bridges
+
+                            $nearbyBridges = array();
+                            $nearbyBridgesByName = array();
+
+                            if (array_key_exists('nearbyBridges', $requestedBridge)) {
+
+                                foreach ($requestedBridge['nearbyBridges'] as $nearbyBridge) {
+
+                                    $nearbyBridgesByName[$nearbyBridge[0]] = $nearbyBridge[1];
+                                }
+                            }
+
+                            foreach ($nearbyBridgesByName as $name => $distance) {
+
+                                foreach ($parsedData['bridges'] as $tmpBridge) {
+
+                                    if ($tmpBridge['name'] == $name) {
+
+                                        $tmpBridge['cityText'] = $this->getBridgeCityText($tmpBridge);
+
+                                        if ($distance > 1) {
+
+                                            $distance = number_format($distance, 1, '.', '') . 'km';
+                                        } else {
+
+                                            $distance = round($distance * 10) * 100 . 'm';
+                                        }
+
+                                        $nearbyBridge = array();
+                                        $nearbyBridge['distance'] = $distance;
+                                        $nearbyBridge['bridge'] = $tmpBridge;
+
+                                        $nearbyBridges[] = $nearbyBridge;
+
+                                        if (count($nearbyBridges) == count($nearbyBridgesByName)) {
+                                            break;
+                                        }
+                                    }
+                                }
+
+                                if (count($nearbyBridges) == count($nearbyBridgesByName)) {
+                                    break;
+                                }
+                            }
+
+                            $renderData['nearbyBridges'] = $nearbyBridges;
+                            $renderData['now'] = time();
+                        }
                     }
-                }
-            } else {
+                } else {
 
-                $renderData = array();
-                $renderData['contentType'] = 'home';
-                $renderData['pageTitle'] = 'Brugopen.nl';
+                    $renderData = array();
+                    $renderData['contentType'] = 'home';
+                    $renderData['browserTitle'] = 'Brugopen.nl';
+                    $renderData['pageTitle'] = 'Brugopen.nl';
 
-                $bridges = array();
+                    $bridges = array();
 
-                $now = time();
+                    $now = time();
 
-                foreach ($parsedData['bridges'] as $bridge) {
+                    foreach ($parsedData['bridges'] as $bridge) {
 
-                    $lastStartedOperation = null;
-                    $nextStartingOperation = null;
+                        $lastStartedOperation = null;
+                        $nextStartingOperation = null;
 
-                    if ($bridge['lastOperations']) {
+                        if ($bridge['lastOperations']) {
 
-                        foreach ($bridge['lastOperations'] as $operation) {
+                            foreach ($bridge['lastOperations'] as $operation) {
 
-                            if ($operation['start'] > 0) {
+                                if ($operation['start'] > 0) {
 
-                                if ($operation['end'] > 0) {
+                                    if ($operation['end'] > 0) {
 
-                                    if ($operation['end'] > $now) {
+                                        if ($operation['end'] > $now) {
 
-                                        $durationSecs = $now - $operation['start'];
+                                            $durationSecs = $now - $operation['start'];
+                                        } else {
+
+                                            $durationSecs = $operation['end'] - $operation['start'];
+                                        }
                                     } else {
 
-                                        $durationSecs = $operation['end'] - $operation['start'];
+                                        $durationSecs = $now - $operation['start'];
                                     }
-                                } else {
 
-                                    $durationSecs = $now - $operation['start'];
-                                }
+                                    if ($operation['start'] > $now) {
 
-                                if ($operation['start'] > $now) {
+                                        // operation not yet started
+                                        if (($operation['end'] > 0) && ($operation['end'] > $operation['start'])) {
 
-                                    // operation not yet started
-                                    if (($operation['end'] > 0) && ($operation['end'] > $operation['start'])) {
-
-                                        $durationSecs = $operation['end'] - $operation['start'];
+                                            $durationSecs = $operation['end'] - $operation['start'];
+                                        }
                                     }
-                                }
 
-                                $start = date('G:i', $operation['start']);
+                                    $start = date('G:i', $operation['start']);
 
-                                if (($now - $operation['start']) > (3600 * 24)) {
+                                    if (($now - $operation['start']) > (3600 * 24)) {
 
-                                    $start = date('d-m', $operation['start']);
-                                }
+                                        $start = date('d-m', $operation['start']);
+                                    }
 
-                                $duration = '';
+                                    $duration = '';
 
-                                if ($durationSecs > 0) {
+                                    if ($durationSecs > 0) {
 
-                                    $durationSecs = ($durationSecs > 60) ? round($durationSecs / 60) * 60 : 60;
+                                        $durationSecs = ($durationSecs > 60) ? round($durationSecs / 60) * 60 : 60;
 
-                                    $duration = $this->getTextualDuration($durationSecs);
-                                }
+                                        $duration = $this->getTextualDuration($durationSecs);
+                                    }
 
-                                $operation['duration'] = str_replace(' ', "\xc2\xa0", $duration);
+                                    $operation['duration'] = str_replace(' ', "\xc2\xa0", $duration);
 
-                                if ($operation['start'] > $now) {
+                                    if ($operation['start'] > $now) {
 
-                                    $nextStartingOperation = $operation;
-                                } else {
+                                        $nextStartingOperation = $operation;
+                                    } else {
 
-                                    if ($lastStartedOperation == null) {
+                                        if ($lastStartedOperation == null) {
 
-                                        if ($operation['certainty'] == 3) {
+                                            if ($operation['certainty'] == 3) {
 
-                                            $operation['startTime'] = $start;
-                                            $lastStartedOperation = $operation;
-                                            break;
+                                                $operation['startTime'] = $start;
+                                                $lastStartedOperation = $operation;
+                                                break;
+                                            }
                                         }
                                     }
                                 }
                             }
                         }
-                    }
 
-                    $bridge['cityText'] = $this->getBridgeCityText($bridge);
-                    $bridge['lastStartedOperation'] = $lastStartedOperation;
-                    $bridge['nextStartingOperation'] = $nextStartingOperation;
+                        $bridge['cityText'] = $this->getBridgeCityText($bridge);
+                        $bridge['lastStartedOperation'] = $lastStartedOperation;
+                        $bridge['nextStartingOperation'] = $nextStartingOperation;
 
-                    if ($lastStartedOperation) {
+                        if ($lastStartedOperation) {
 
-                        $bridgeName = $bridge['name'];
+                            $bridgeName = $bridge['name'];
 
-                        $bridges[$bridgeName] = $bridge;
-                    }
-                }
-
-                ksort($bridges);
-
-                $openBridges = array();
-                $openingBridges = array();
-
-                foreach ($bridges as $bridge) {
-
-                    if ($bridge['lastStartedOperation']) {
-
-                        $lastStartedOperation = $bridge['lastStartedOperation'];
-
-                        if (!($lastStartedOperation['end'] && $lastStartedOperation['end'] < $now)) {
-
-                            $openBridges[] = $bridge;
+                            $bridges[$bridgeName] = $bridge;
                         }
                     }
 
-                    if ($bridge['nextStartingOperation']) {
+                    ksort($bridges);
 
-                        $openingBridges[] = $bridge;
+                    $openBridges = array();
+                    $openingBridges = array();
+
+                    foreach ($bridges as $bridge) {
+
+                        if ($bridge['lastStartedOperation']) {
+
+                            $lastStartedOperation = $bridge['lastStartedOperation'];
+
+                            if (!($lastStartedOperation['end'] && $lastStartedOperation['end'] < $now)) {
+
+                                $openBridges[] = $bridge;
+                            }
+                        }
+
+                        if ($bridge['nextStartingOperation']) {
+
+                            $openingBridges[] = $bridge;
+                        }
                     }
+
+                    $renderData['openBridges'] = $openBridges;
+                    $renderData['openingBridges'] = $openingBridges;
+                    $renderData['bridges'] = $bridges;
+                    $renderData['now'] = $now;
                 }
+            } else {
 
-                $renderData['openBridges'] = $openBridges;
-                $renderData['openingBridges'] = $openingBridges;
-                $renderData['bridges'] = $bridges;
-                $renderData['now'] = $now;
+                $renderData = array();
+                $renderData['contentType'] = 'error';
+                $renderData['pageTitle'] = 'Fout';
             }
-        } else {
-
-            $renderData = array();
-            $renderData['contentType'] = 'error';
-            $renderData['pageTitle'] = 'Brugopen.nl';
         }
 
         if ($renderData == null) {
 
             $renderData = array();
             $renderData['contentType'] = '404';
-            $renderData['pageTitle'] = 'Pagina niet gevonden | Brugopen.nl';
+            $renderData['pageTitle'] = 'Pagina niet gevonden';
         }
 
         $jsFile = $this->context->getAppRoot() . 'html/assets/scripts/BrugOpen.js';
@@ -584,5 +596,15 @@ class RenderDataService
         }
 
         return $lastOperations;
+    }
+
+    /**
+     *
+     * @param string $requestUri
+     * @return array|null
+     */
+    public function getStaticPageRenderData($requestUri)
+    {
+        return null;
     }
 }
