@@ -127,7 +127,14 @@ class FrontEndController implements ContextAware
 
         $template = $twig->load('start.twig');
 
-        $renderDataService = new RenderDataService();
+        $localRenderDataServiceClass = 'BrugOpen\Service\LocalRenderDataService';
+
+        if (class_exists($localRenderDataServiceClass)) {
+            $renderDataService = new $localRenderDataServiceClass();
+        } else {
+            $renderDataService = new RenderDataService();
+        }
+
         $renderDataService->initialize($context);
 
         $renderData = $renderDataService->getRenderData($requestUri);
