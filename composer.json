@@ -1,6 +1,6 @@
 {
 	"name": "brugopen/brugopen",
-	"description" : "The PHP engine that runs brugopen.nl",
+	"description": "The PHP engine that runs brugopen.nl",
 	"license": "Apache-2.0",
 	"type": "project",
 	"require": {
@@ -8,11 +8,12 @@
 		"monolog/monolog": "^1"
 	},
 	"require-dev": {
+		"twig/twig": "*",
 		"phpunit/phpunit": "*"
 	},
 	"autoload": {
 		"psr-4": {
-			"BrugOpen\\" : "src/BrugOpen"
+			"BrugOpen\\": "src/BrugOpen"
 		}
 	},
 	"scripts": {
