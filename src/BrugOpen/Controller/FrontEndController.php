@@ -139,12 +139,38 @@ class FrontEndController implements ContextAware
 
         $renderData = $renderDataService->getRenderData($requestUri);
 
-        // $renderData['segmentPolygons'] = $segmentPolygons;
+        // check og image
 
-        // $renderData['maxLat'] = $maxLat;
-        // $renderData['minLat'] = $minLat;
-        // $renderData['maxLng'] = $maxLng;
-        // $renderData['minLng'] = $minLng;
+        if (!isset($renderData['ogImage'])) {
+
+            $renderData['ogImageUrl'] = 'https://brugopen.nl/assets/images/brugopen-og.png';
+            $renderData['ogImageWidth'] = 1200;
+            $renderData['ogImageHeight'] = 630;
+        }
+
+        if (!isset($renderData['ogTitle'])) {
+            if ($renderData['pageTitle']) {
+                $renderData['ogTitle'] = $renderData['pageTitle'] . ' - BrugOpen.nl';
+            } else {
+                $renderData['ogTitle'] = 'BrugOpen.nl - Actuele brugopeningen in Noord- en Zuid-Holland';
+            }
+        }
+
+        if (!isset($renderData['ogDescription'])) {
+            if ($renderData['description']) {
+                $renderData['ogDescription'] = $renderData['description'];
+            } else {
+                $renderData['ogDescription'] = 'BrugOpen.nl toont actuele brugopeningen in Nederland. Ontvang notificaties van brugopeningen in je browser.';
+            }
+        }
+
+        if (!isset($renderData['ogType'])) {
+            $renderData['ogType'] = 'website';
+        }
+
+        if (!isset($renderData['ogUrl'])) {
+            $renderData['ogUrl'] = 'https://brugopen.nl' . $_SERVER['REQUEST_URI'];
+        }
 
         header('Content-type: text/html; charset=UTF-8');
 
