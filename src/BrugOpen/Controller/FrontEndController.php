@@ -172,6 +172,10 @@ class FrontEndController implements ContextAware
             $renderData['ogUrl'] = 'https://brugopen.nl' . $_SERVER['REQUEST_URI'];
         }
 
+        if ($renderData['contentType'] == '404') {
+            header("HTTP/1.0 404 Not Found");
+        }
+
         header('Content-type: text/html; charset=UTF-8');
 
         $template->display($renderData);
