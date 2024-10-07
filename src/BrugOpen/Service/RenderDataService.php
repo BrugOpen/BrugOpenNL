@@ -83,6 +83,8 @@ class RenderDataService
                             $renderData['contentType'] = 'bridge';
                             $renderData['browserTitle'] = $requestedBridge['title'] . ' | Brugopen.nl';
                             $renderData['pageTitle'] = $requestedBridge['title'];
+                            $renderData['ogTitle'] = $requestedBridge['title'] . $requestedBridge['cityText'];
+                            $renderData['ogDescription'] = 'Bekijk actuele brugopeningen van de ' . $requestedBridge['title'] . ' en ontvang notificaties van brugopeningen in je browser op BrugOpen.nl';
                             $renderData['bridge'] = $requestedBridge;
 
                             // get body text
