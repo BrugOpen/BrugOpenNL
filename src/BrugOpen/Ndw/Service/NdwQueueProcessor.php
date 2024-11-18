@@ -271,7 +271,7 @@ class NdwQueueProcessor
 
                         if ($eventDispatcher) {
 
-                            $eventDispatcher->postEvent('Ndw.DeliveryBreak');
+                            $eventDispatcher->postEvent('Ndw.DeliveryBreak', array());
                         }
                     }
                 }
