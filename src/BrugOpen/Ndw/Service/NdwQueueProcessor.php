@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Ndw\Service;
 
 use BrugOpen\Core\Context;
@@ -94,13 +95,10 @@ class NdwQueueProcessor
             if ($this->context) {
 
                 $this->eventDispatcher = $this->context->getEventDispatcher();
-
             }
-
         }
 
         return $this->eventDispatcher;
-
     }
 
     /**
@@ -134,9 +132,7 @@ class NdwQueueProcessor
         if (sizeof($files) > 0) {
 
             $this->processQueueFiles($files);
-
         }
-
     }
 
     /**
@@ -171,7 +167,6 @@ class NdwQueueProcessor
                     if (!is_dir($archiveDir)) {
 
                         mkdir($archiveDir, 0755, true);
-
                     }
 
                     $fileArchived = false;
@@ -181,15 +176,12 @@ class NdwQueueProcessor
                         $archiveFile = $archiveDir . basename($queueFile);
 
                         $fileArchived = rename($queueFile, $archiveFile);
-
                     }
 
                     if ($fileArchived) {
 
                         $log->info('Archived ' . basename($queueFile));
-
                     }
-
                 }
 
                 $numProcessed++;
@@ -197,17 +189,13 @@ class NdwQueueProcessor
                 if ($numProcessed % 100 == 0) {
 
                     $log->info('Processed ' . $numProcessed . ' NDW files');
-
                 }
-
             }
 
             $log->info('Processed ' . $numProcessed . ' NDW files');
 
             $situationProcessor->markUncertainSituationsIgnored();
-
         }
-
     }
 
     /**
@@ -276,26 +264,22 @@ class NdwQueueProcessor
 
                     if ($exchange->getDeliveryBreak() == 'true') {
 
+                        $log->info("Received deliveryBreak message");
+
                         // dispatch deliveryBreak event
                         $eventDispatcher = $this->getEventDispatcher();
 
                         if ($eventDispatcher) {
 
                             $eventDispatcher->postEvent('Ndw.DeliveryBreak');
-
                         }
-
                     }
-
                 }
-
             }
-
         } else {
 
             $log->error('Could not parse ' . $file);
         }
-
     }
 
     /**
@@ -309,7 +293,7 @@ class NdwQueueProcessor
 
         if (is_dir($queueDir)) {
 
-            if (substr($queueDir, - 1) != DIRECTORY_SEPARATOR) {
+            if (substr($queueDir, -1) != DIRECTORY_SEPARATOR) {
 
                 $queueDir .= DIRECTORY_SEPARATOR;
             }
@@ -348,7 +332,6 @@ class NdwQueueProcessor
         $archiveRoot = $datadir . 'ndw' . DIRECTORY_SEPARATOR . 'archive' . DIRECTORY_SEPARATOR;
 
         return $archiveRoot;
-
     }
 
     /**
@@ -364,7 +347,6 @@ class NdwQueueProcessor
         if (substr($archiveRoot, -1) != DIRECTORY_SEPARATOR) {
 
             $archiveRoot .= DIRECTORY_SEPARATOR;
-
         }
 
         $yearDir = $archiveRoot . date('Y', $time) . DIRECTORY_SEPARATOR;
@@ -372,7 +354,5 @@ class NdwQueueProcessor
         $archiveDir = $yearDir . $date . DIRECTORY_SEPARATOR;
 
         return $archiveDir;
-
     }
-
 }
