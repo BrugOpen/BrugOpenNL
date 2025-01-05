@@ -39,17 +39,13 @@ class AISHubFileReader
             if ($fp = gzopen($file, 'r')) {
 
                 $this->fp = $fp;
-
             }
-
         } else {
 
             if ($fp = fopen($file, 'r')) {
 
                 $this->fp = $fp;
-
             }
-
         }
 
         if ($this->fp) {
@@ -57,14 +53,10 @@ class AISHubFileReader
             if ($headers = fgetcsv($this->fp, 4096)) {
 
                 $this->headers = $headers;
-
             }
 
             $this->rewind();
-            $this->nextRecord();
-
         }
-
     }
 
     /**
@@ -74,7 +66,6 @@ class AISHubFileReader
     {
 
         return $this->currentData;
-
     }
 
     /**
@@ -123,17 +114,13 @@ class AISHubFileReader
                     $record->setEta(($values['ETA'] != 0) ? $values['ETA'] : null);
 
                     $this->currentData = $record;
-
                 }
-
             }
-
         }
 
         $this->line++;
 
         return $this->currentData;
-
     }
 
     /**
@@ -143,7 +130,7 @@ class AISHubFileReader
     {
 
         $this->line = -1;
-
+        $this->currentData = null;
     }
 
     /**
@@ -163,9 +150,6 @@ class AISHubFileReader
         if ($this->fp) {
 
             @fclose($this->fp);
-
         }
-
     }
-
 }
