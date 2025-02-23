@@ -222,7 +222,7 @@ class OperationProjectionServiceTest extends TestCase
 
         $record = [];
         $record['id'] = 9;
-        $record['announce_approach'] = 1;
+        $record['project_operations'] = 1;
         $record['isrs_code'] = 'NLAMB002120533600182';
 
         $tableManager->insertRecord('bo_bridge', $record);
@@ -301,7 +301,7 @@ class OperationProjectionServiceTest extends TestCase
 
         $record = [];
         $record['id'] = 9;
-        $record['announce_approach'] = 1;
+        $record['project_operations'] = 1;
         $record['isrs_code'] = 'NLAMB002120533600182';
         $record['title'] = 'Aalsmeerderbrug';
         $record['active'] = 1;
