@@ -78,11 +78,16 @@ class DatabaseTableManagerFactory implements ServiceFactory
         $config['bo_bridge']['wiki_url'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['wiki_lat'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['wiki_lng'] = DatabaseTableManager::COLUMN_STR;
+        $config['bo_bridge']['project_operations'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_bridge']['approach1'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['approach2'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_bridge']['announce_approach'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_bridge']['active'] = DatabaseTableManager::COLUMN_INT;
         $config['bo_bridge']['last_started_operation_id'] = DatabaseTableManager::COLUMN_INT;
+        $config['bo_bridge']['num_projections'] = DatabaseTableManager::COLUMN_INT;
+        $config['bo_bridge']['num_accurate_projections'] = DatabaseTableManager::COLUMN_INT;
+        $config['bo_bridge']['num_accurate_first_projections'] = DatabaseTableManager::COLUMN_INT;
+        $config['bo_bridge']['avg_time_until_operation'] = DatabaseTableManager::COLUMN_INT;
         $config['bo_bridge_approach']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_bridge_approach']['bridge_id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_bridge_approach']['mmsi'] = DatabaseTableManager::COLUMN_STR + DatabaseTableManager::COLUMN_NOTNULL;
