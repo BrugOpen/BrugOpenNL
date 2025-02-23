@@ -280,7 +280,7 @@ class OperationProjectionService
 
         $tableManager = $this->getTableManager();
 
-        $criteria = array('announce_approach' => 1);
+        $criteria = array('project_operations' => 1);
 
         $records = $tableManager->findRecords('bo_bridge', $criteria);
 
@@ -717,5 +717,232 @@ class OperationProjectionService
         }
 
         return $gap;
+    }
+
+    /**
+     * Update operation projection stats
+     * @return void
+     */
+    public function updateOperationProjectionStats()
+    {
+
+        $today = new \DateTimeImmutable('today');
+        $oneMonthAgo = $today->sub(new \DateInterval('P1M'));
+
+        $statsPerBridge = [];
+
+        // collect operation projections per bridge
+        $tableManager = $this->getTableManager();
+        $criteria = array();
+        $criteria[] = new CriteriumFieldComparison('time_start', Criterium::OPERATOR_GE, $oneMonthAgo->format('Y-m-d'));
+        $criteria[] = new CriteriumFieldComparison('version', Criterium::OPERATOR_EQUALS, 1);
+        $operationProjectionRecords = $tableManager->findRecords('bo_operation_projection', $criteria);
+
+        $operationProjectionsByBridge = [];
+
+        foreach ($operationProjectionRecords as $operationProjection) {
+            $bridgeId = $operationProjection['bridge_id'];
+            if (!isset($operationProjectionsByBridge[$bridgeId])) {
+                $operationProjectionsByBridge[$bridgeId] = [];
+            }
+            $operationProjectionsByBridge[$bridgeId][] = $operationProjection;
+        }
+
+        $operationProjectionRecords = null;
+
+        foreach (array_keys($operationProjectionsByBridge) as $bridgeId) {
+            $operationProjections = $operationProjectionsByBridge[$bridgeId];
+            $statsPerProjection = $this->calculateOperationProjectionStats($operationProjections);
+
+            $numProjections = count($statsPerProjection);
+
+            $numAccurateProjections = 0;
+            $numAccurateFirstProjections = 0;
+            $totalTimeUntilOperation = 0;
+            $timeUntilOperationCount = 0;
+
+            foreach ($statsPerProjection as $projectionStats) {
+
+                if ($projectionStats['projection_accurate']) {
+
+                    $numAccurateProjections++;
+
+                    if ($projectionStats['projection_first']) {
+                        $numAccurateFirstProjections++;
+                    }
+
+                    $timeUntilOperation = $projectionStats['time_until_operation'];
+                    if ($timeUntilOperation > 0) {
+                        $totalTimeUntilOperation += $timeUntilOperation;
+                        $timeUntilOperationCount++;
+                    }
+                }
+            }
+
+            $averageTimeUntilOperation = 0;
+
+            if ($timeUntilOperationCount > 0) {
+                $averageTimeUntilOperation = round($totalTimeUntilOperation / $timeUntilOperationCount);
+            }
+
+            $stats = [];
+            $stats['num_projections'] = $numProjections;
+            $stats['num_accurate_projections'] = $numAccurateProjections;
+            $stats['num_accurate_first_projections'] = $numAccurateFirstProjections;
+            $stats['avg_time_until_operation'] = $averageTimeUntilOperation;
+
+            $statsPerBridge[$bridgeId] = $stats;
+        }
+
+        // update all bridges
+
+        $bridgeRecords = $tableManager->findRecords('bo_bridge');
+
+        foreach ($bridgeRecords as $bridgeRecord) {
+
+            $bridgeId = $bridgeRecord['id'];
+
+            $values = [];
+
+            if (isset($statsPerBridge[$bridgeId])) {
+
+                $stats = $statsPerBridge[$bridgeId];
+                $values['num_projections'] = $stats['num_projections'];
+                $values['num_accurate_projections'] = $stats['num_accurate_projections'];
+                $values['num_accurate_first_projections'] = $stats['num_accurate_first_projections'];
+                $values['avg_time_until_operation'] = $stats['avg_time_until_operation'];
+            } else {
+
+                $values['num_projections'] = null;
+                $values['num_accurate_projections'] = null;
+                $values['num_accurate_first_projections'] = null;
+                $values['avg_time_until_operation'] = null;
+            }
+
+            $keys = ['id' => $bridgeId];
+            $tableManager->updateRecords('bo_bridge', $values, $keys);
+        }
+    }
+
+    public function calculateOperationProjectionStats($operationProjections)
+    {
+
+        // stats by projection
+        $statsByProjection = [];
+
+        // collect operation ids
+
+        $operationIds = [];
+
+        $firstProjectionTimeByOperationId = [];
+
+        foreach ($operationProjections as $operationProjection) {
+            $operationId = (int)$operationProjection['operation_id'];
+            if ($operationId > 0) {
+                $operationIds[] = $operationId;
+
+                $firstProjectionTime = $operationProjection['datetime_projection'];
+
+                if ($firstProjectionTime) {
+                    $firstProjectionTimeByOperationId[$operationId] = $firstProjectionTime->getTimestamp();
+                }
+            }
+        }
+
+        // process operation ids in batches of 20
+
+        $batchSize = 20;
+        $batches = array_chunk($operationIds, $batchSize);
+
+        $tableManager = $this->getTableManager();
+
+        foreach ($batches as $batch) {
+
+            // load operation records
+            $operations = $tableManager->findRecords('bo_operation', ['id' => $batch]);
+
+            $firstPublicationTimeByOperationId = [];
+
+            $eventIdByOperationId = [];
+
+            foreach ($operations as $operation) {
+
+                $operationId = (int)$operation['id'];
+                $eventId = $operation['event_id'];
+                if (substr($eventId, 0, 7) === 'BONL01_') {
+                    continue;
+                }
+                $eventIdByOperationId[$operationId] = $operation['event_id'];
+            }
+
+            if ($eventIdByOperationId) {
+
+                $orders = array(array('id', 'ASC'), array('version', 'ASC'));
+                $situations = $tableManager->findRecords('bo_situation', ['id' => $eventIdByOperationId], null, $orders);
+
+                if ($situations) {
+
+                    foreach ($situations as $situation) {
+
+                        $eventId = $situation['id'];
+
+                        if ($eventId) {
+
+                            if (isset($firstPublicationByOperationId[$eventId])) {
+                                continue;
+                            }
+
+                            $firstPublication = $situation['first_publication_time'];
+
+                            if ($firstPublication) {
+
+                                $firstPublicationByOperationId[$eventId] = $firstPublication->getTimestamp();
+                            }
+                        }
+                    }
+                }
+            }
+
+            foreach ($eventIdByOperationId as $operationId => $eventId) {
+
+                if (isset($firstPublicationByOperationId[$eventId])) {
+                    $firstPublicationTimeByOperationId[$operationId] = $firstPublicationByOperationId[$eventId];
+                }
+            }
+
+            foreach ($operations as $operation) {
+
+                $operationId = (int)$operation['id'];
+
+                // determine if projection lead to actual operation
+
+                $projectionAccurate = false;
+                $projectionFirst = false;
+                $timeUntilOperation = null;
+
+                if (isset($firstPublicationTimeByOperationId[$operationId])) {
+
+                    $projectionAccurate = true;
+
+                    $firstProjectionTime = $firstProjectionTimeByOperationId[$operationId];
+                    $firstPublicationTime = $firstPublicationTimeByOperationId[$operationId];
+
+                    if ($firstProjectionTime < $firstPublicationTime) {
+                        $projectionFirst = true;
+                    }
+
+                    $timeUntilOperation = $operation['time_start']->getTimestamp() - $firstProjectionTime;
+                }
+
+                $stats = [];
+                $stats['projection_accurate'] = $projectionAccurate;
+                $stats['projection_first'] = $projectionFirst;
+                $stats['time_until_operation'] = $timeUntilOperation;
+
+                $statsByProjection[$operationId] = $stats;
+            }
+        }
+
+        return $statsByProjection;
     }
 }
