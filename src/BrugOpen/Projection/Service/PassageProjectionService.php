@@ -983,7 +983,7 @@ class PassageProjectionService
 
         $tableManager = $this->getTableManager();
 
-        $criteria = array('announce_approach' => 1);
+        $criteria = array('project_operations' => 1);
 
         $records = $tableManager->findRecords('bo_bridge', $criteria);
 
