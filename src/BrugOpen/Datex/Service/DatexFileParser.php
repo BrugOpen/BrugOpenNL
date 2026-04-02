@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Datex\Service;
 
 use BrugOpen\Datex\Model\AlertCDirection;
@@ -120,12 +121,12 @@ class DatexFileParser
 
         if (is_file($file)) {
 
-            if (substr($file, - 3) == '.gz') {
+            if (substr($file, -3) == '.gz') {
 
                 $linkToXmlFile = "compress.zlib://" . $file;
                 $xmlReader = new XMLReader();
                 $xmlReader->open($linkToXmlFile, null, LIBXML_NOERROR | LIBXML_NOWARNING);
-            } else if (substr($file, - 4) == '.xml') {
+            } else if (substr($file, -4) == '.xml') {
 
                 $xmlReader = new XMLReader();
                 $xmlReader->open($file);
@@ -189,7 +190,7 @@ class DatexFileParser
 
         if ($node->hasChildNodes()) {
 
-            for ($i = 0; $i < $node->childNodes->length; $i ++) {
+            for ($i = 0; $i < $node->childNodes->length; $i++) {
 
                 $childNode = $node->childNodes->item($i);
 
@@ -217,7 +218,7 @@ class DatexFileParser
 
         if ($node->hasChildNodes()) {
 
-            for ($i = 0; $i < $node->childNodes->length; $i ++) {
+            for ($i = 0; $i < $node->childNodes->length; $i++) {
 
                 $childNode = $node->childNodes->item($i);
 
@@ -239,6 +240,12 @@ class DatexFileParser
         $dateTime = null;
 
         if ($isoDate != '') {
+
+            // The strtotime function does not support the nanosecond part of the date, so we need to remove it before parsing the date.
+            if (strpos($isoDate, '.') !== false) {
+                $isoDate = substr($isoDate, 0, strpos($isoDate, '.')) . 'Z';
+            }
+
             $timeStamp = strtotime($isoDate);
             $dateTime = new \DateTime();
             $dateTime->setTimestamp($timeStamp);
