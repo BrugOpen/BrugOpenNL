@@ -520,4 +520,12 @@ class DatexFileParserTest extends TestCase
         $this->assertEquals('mandatory', $situationRecord->getComplianceOption());
         $this->assertEquals('bridgeSwingInOperation', $situationRecord->getGeneralNetworkManagementType());
     }
+
+    public function testParseDateTimeWithNanoseconds()
+    {
+        $parser = new DatexFileParser();
+        $dateTime = $parser->parseDateTimeValue('2026-02-06T09:14:46.880731009Z');
+        $this->assertNotEquals(0, $dateTime->getTimestamp());
+        $this->assertEquals(strtotime('2026-02-06T09:14:46Z'), $dateTime->getTimestamp());
+    }
 }
