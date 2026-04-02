@@ -729,6 +729,9 @@ class OperationProjectionService
         $today = new \DateTimeImmutable('today');
         $oneMonthAgo = $today->sub(new \DateInterval('P1M'));
 
+        $logger = $this->getLog();
+        $logger->info('Updating operation projection stats since ' . $oneMonthAgo->format('Y-m-d'));
+
         $statsPerBridge = [];
 
         // collect operation projections per bridge
@@ -822,6 +825,8 @@ class OperationProjectionService
             $keys = ['id' => $bridgeId];
             $tableManager->updateRecords('bo_bridge', $values, $keys);
         }
+
+        $logger->info('Finished updating operation projection stats since ' . $oneMonthAgo->format('Y-m-d'));
     }
 
     public function calculateOperationProjectionStats($operationProjections)
@@ -839,11 +844,17 @@ class OperationProjectionService
         foreach ($operationProjections as $operationProjection) {
             $operationId = (int)$operationProjection['operation_id'];
             if ($operationId > 0) {
-                $operationIds[] = $operationId;
 
                 $firstProjectionTime = $operationProjection['datetime_projection'];
+                $operationStartTime = $operationProjection['time_start'];
 
-                if ($firstProjectionTime) {
+                if ($firstProjectionTime && $operationStartTime) {
+                    if ($operationStartTime->getTimestamp() < $firstProjectionTime->getTimestamp()) {
+                        continue;
+                    }
+
+                    $operationIds[] = $operationId;
+
                     $firstProjectionTimeByOperationId[$operationId] = $firstProjectionTime->getTimestamp();
                 }
             }
