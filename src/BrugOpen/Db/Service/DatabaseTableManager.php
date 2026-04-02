@@ -303,6 +303,9 @@ class DatabaseTableManager implements TableManager
                 }
             } else {
 
+                $errorInfo = $stmt->errorInfo();
+                trigger_error('Failed to insert record into ' . $table . ': ' . $errorInfo[2], E_USER_WARNING);
+
                 $res = false;
             }
         }
