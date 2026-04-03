@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Datex\Model;
 
 use DateTime;
@@ -53,6 +54,12 @@ class SituationRecord
      * @var \BrugOpen\Datex\Model\Point
      */
     private $groupOfLocations;
+
+    /**
+     *
+     * @var PointLocation
+     */
+    private $locationReference;
 
     /**
      *
@@ -220,6 +227,23 @@ class SituationRecord
     public function setGroupOfLocations($groupOfLocations)
     {
         $this->groupOfLocations = $groupOfLocations;
+    }
+
+    /**
+     *
+     * @return PointLocation
+     */
+    public function getLocationReference()
+    {
+        return $this->locationReference;
+    }
+
+    /**
+     * @param PointLocation $locationReference
+     */
+    public function setLocationReference($locationReference)
+    {
+        $this->locationReference = $locationReference;
     }
 
     /**
