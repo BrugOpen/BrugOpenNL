@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Datex\Model;
 
 class Point
@@ -42,7 +43,7 @@ class Point
 
     /**
      *
-     * @return \BrugOpen\Datex\Model\PointByCoordinates
+     * @return \BrugOpen\Datex\Model\PointCoordinates
      */
     public function getLocationForDisplay()
     {
