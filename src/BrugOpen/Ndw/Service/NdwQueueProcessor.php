@@ -214,21 +214,17 @@ class NdwQueueProcessor
 
         $log->info('Processing ' . $file);
 
-        $fileData = $fileParser->parseFile($queueFile);
+        $messageContainer = $fileParser->parseV3File($queueFile);
 
-        if ($fileData) {
+        if ($messageContainer) {
 
-            /**
-             *
-             * @var \DateTime $publicationTime
-             */
-            $publicationTime = null;
+            $payload = $messageContainer->getPayload();
 
-            if ($fileData->getPayloadPublication()) {
+            if ($payload) {
 
-                $publicationTime = $fileData->getPayloadPublication()->getPublicationTime();
+                $publicationTime = $payload->getPublicationTime();
 
-                $situations = $fileData->getPayloadPublication()->getSituations();
+                $situations = $payload->getSituations();
 
                 if ($situations) {
 
@@ -237,48 +233,101 @@ class NdwQueueProcessor
                         $situationProcessor->processSituation($situation, $publicationTime);
                     }
                 }
-            }
 
-            $exchange = $fileData->getExchange();
+                $updateMethod = null;
 
-            if ($exchange) {
+                $exchangeInformation = $messageContainer->getExchangeInformation();
 
-                $subscription = $fileData->getExchange()->getSubscription();
+                if ($exchangeInformation) {
 
-                if ($subscription) {
+                    $exchangeContext = $exchangeInformation->getExchangeContext();
 
-                    $updateMethod = $subscription->getUpdateMethod();
+                    if ($exchangeContext) {
 
-                    if ($updateMethod == 'snapshot') {
-
-                        if ($publicationTime != null) {
-
-                            $log->debug('Checking unfunished gone operations for publication time ' . $publicationTime->format('Y-m-d H:i:s'));
-
-                            $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
-                        }
+                        $updateMethod = $exchangeContext->getCodedExchangeProtocol();
                     }
                 }
 
-                if ($exchange->getKeepAlive() == 'true') {
+                if ($updateMethod == 'snapshotPull') {
 
-                    if ($exchange->getDeliveryBreak() == 'true') {
+                    if ($publicationTime != null) {
 
-                        $log->info("Received deliveryBreak message");
+                        $log->debug('Checking unfunished gone operations for publication time ' . $publicationTime->format('Y-m-d H:i:s'));
 
-                        // dispatch deliveryBreak event
-                        $eventDispatcher = $this->getEventDispatcher();
-
-                        if ($eventDispatcher) {
-
-                            $eventDispatcher->postEvent('Ndw.DeliveryBreak', array());
-                        }
+                        $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
                     }
                 }
             }
         } else {
 
-            $log->error('Could not parse ' . $file);
+            // try parsing as v2 file
+
+            $fileData = $fileParser->parseFile($queueFile);
+
+            if ($fileData) {
+
+                /**
+                 *
+                 * @var \DateTime $publicationTime
+                 */
+                $publicationTime = null;
+
+                if ($fileData->getPayloadPublication()) {
+
+                    $publicationTime = $fileData->getPayloadPublication()->getPublicationTime();
+
+                    $situations = $fileData->getPayloadPublication()->getSituations();
+
+                    if ($situations) {
+
+                        foreach ($situations as $situation) {
+
+                            $situationProcessor->processSituation($situation, $publicationTime);
+                        }
+                    }
+                }
+
+                $exchange = $fileData->getExchange();
+
+                if ($exchange) {
+
+                    $subscription = $fileData->getExchange()->getSubscription();
+
+                    if ($subscription) {
+
+                        $updateMethod = $subscription->getUpdateMethod();
+
+                        if ($updateMethod == 'snapshot') {
+
+                            if ($publicationTime != null) {
+
+                                $log->debug('Checking unfunished gone operations for publication time ' . $publicationTime->format('Y-m-d H:i:s'));
+
+                                $situationProcessor->checkUnfinishedGoneOperations($publicationTime);
+                            }
+                        }
+                    }
+
+                    if ($exchange->getKeepAlive() == 'true') {
+
+                        if ($exchange->getDeliveryBreak() == 'true') {
+
+                            $log->info("Received deliveryBreak message");
+
+                            // dispatch deliveryBreak event
+                            $eventDispatcher = $this->getEventDispatcher();
+
+                            if ($eventDispatcher) {
+
+                                $eventDispatcher->postEvent('Ndw.DeliveryBreak', array());
+                            }
+                        }
+                    }
+                }
+            } else {
+
+                $log->error('Could not parse ' . $file);
+            }
         }
     }
 
