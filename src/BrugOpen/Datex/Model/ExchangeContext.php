@@ -9,7 +9,7 @@ class ExchangeContext
      *
      * @var string
      */
-    private $codedExchangeProtoccol;
+    private $codedExchangeProtocol;
 
     /**
      *
@@ -24,24 +24,24 @@ class ExchangeContext
     private $internationalIdentifier;
 
     /**
-     * Get the value of codedExchangeProtoccol
+     * Get the value of codedExchangeProtocol
      *
      * @return string
      */
-    public function getCodedExchangeProtoccol()
+    public function getCodedExchangeProtocol()
     {
-        return $this->codedExchangeProtoccol;
+        return $this->codedExchangeProtocol;
     }
 
     /**
-     * Set the value of codedExchangeProtoccol
+     * Set the value of codedExchangeProtocol
      *
-     * @param string $codedExchangeProtoccol
+     * @param string $codedExchangeProtocol
      * @return void
      */
-    public function setCodedExchangeProtoccol($codedExchangeProtoccol)
+    public function setCodedExchangeProtocol($codedExchangeProtocol)
     {
-        $this->codedExchangeProtoccol = $codedExchangeProtoccol;
+        $this->codedExchangeProtocol = $codedExchangeProtocol;
     }
 
     /**
