@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Core;
 
 class TestEventDispatcher extends EventDispatcher
@@ -33,5 +34,14 @@ class TestEventDispatcher extends EventDispatcher
     public function getPostedEvents()
     {
         return $this->postedEvents;
+    }
+
+    /**
+     * Clears the list of posted events.
+     * This is useful to reset the state of the event dispatcher between test cases.
+     */
+    public function clearPostedEvents()
+    {
+        $this->postedEvents = array();
     }
 }
