@@ -4,7 +4,6 @@
 	"license": "Apache-2.0",
 	"type": "project",
 	"require": {
-		"minishlink/web-push": "^1",
 		"monolog/monolog": "^1"
 	},
 	"require-dev": {
