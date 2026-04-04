@@ -934,7 +934,10 @@ class DatexFileParser
                 $internationalIdentifier = new \BrugOpen\Datex\Model\InternationalIdentifier();
                 $internationalIdentifier->setCountry($this->getSubNodeValue($identifierNode, 'country', true));
                 $internationalIdentifier->setNationalIdentifier($this->getSubNodeValue($identifierNode, 'nationalIdentifier', true));
-                $exchangeContext->setInternationalIdentifier($internationalIdentifier);
+
+                $agent = new \BrugOpen\Datex\Model\Agent();
+                $agent->setInternationalIdentifier($internationalIdentifier);
+                $exchangeContext->setSupplierOrCisRequester($agent);
             }
         }
 

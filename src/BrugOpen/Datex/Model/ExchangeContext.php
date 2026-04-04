@@ -19,9 +19,9 @@ class ExchangeContext
 
     /**
      *
-     * @var InternationalIdentifier
+     * @var Agent
      */
-    private $internationalIdentifier;
+    private $supplierOrCisRequester;
 
     /**
      * Get the value of codedExchangeProtocol
@@ -66,23 +66,23 @@ class ExchangeContext
     }
 
     /**
-     * Get the value of internationalIdentifier
+     * Get the value of supplierOrCisRequester
      *
-     * @return InternationalIdentifier
+     * @return Agent
      */
-    public function getInternationalIdentifier()
+    public function getSupplierOrCisRequester()
     {
-        return $this->internationalIdentifier;
+        return $this->supplierOrCisRequester;
     }
 
     /**
-     * Set the value of internationalIdentifier
+     * Set the value of supplierOrCisRequester
      *
-     * @param InternationalIdentifier $internationalIdentifier
+     * @param Agent $supplierOrCisRequester
      * @return void
      */
-    public function setInternationalIdentifier($internationalIdentifier)
+    public function setSupplierOrCisRequester($supplierOrCisRequester)
     {
-        $this->internationalIdentifier = $internationalIdentifier;
+        $this->supplierOrCisRequester = $supplierOrCisRequester;
     }
 }

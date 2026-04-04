@@ -548,6 +548,17 @@ class DatexFileParserTest extends TestCase
 
         $this->assertEquals('snapshotPull', $messageContainer->getExchangeInformation()->getExchangeContext()->getCodedExchangeProtocol());
 
+        $agent = $messageContainer->getExchangeInformation()->getExchangeContext()->getSupplierOrCisRequester();
+
+        $this->assertNotNull($agent);
+
+        $internationalIdentifier = $agent->getInternationalIdentifier();
+
+        $this->assertNotNull($internationalIdentifier);
+
+        $this->assertEquals("nl", $internationalIdentifier->getCountry());
+        $this->assertEquals("NDWNL", $internationalIdentifier->getNationalIdentifier());
+
         $situations = $messageContainer->getPayload()->getSituations();
 
         $this->assertCount(1586, $situations);
