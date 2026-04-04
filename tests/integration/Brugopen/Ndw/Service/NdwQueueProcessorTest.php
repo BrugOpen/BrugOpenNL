@@ -620,6 +620,8 @@ class NdwQueueProcessorTest extends TestCase
         $this->assertEquals('2026-04-02 14:03:00', $insertedSituation['last_publication_time']->format('Y-m-d H:i:s'));
         $this->assertEquals("certain", $insertedSituation['probability']);
         $this->assertEquals('2026-04-02 13:58:40', $insertedSituation['version_time']->format('Y-m-d H:i:s'));
+        $this->assertEquals("52.13482", $insertedSituation['lat']);
+        $this->assertEquals("4.663064", $insertedSituation['lng']);
 
         $keys = ['id' => 'BMS01_NLALK002340558400407_114561123'];
         $insertedSituations = $tableManager->findRecords('bo_situation', $keys);
@@ -638,6 +640,8 @@ class NdwQueueProcessorTest extends TestCase
         $this->assertEquals('2026-04-02 14:03:00', $insertedSituation['last_publication_time']->format('Y-m-d H:i:s'));
         $this->assertEquals("riskOf", $insertedSituation['probability']);
         $this->assertEquals('2026-04-02 14:02:26', $insertedSituation['version_time']->format('Y-m-d H:i:s'));
+        $this->assertEquals("52.633614", $insertedSituation['lat']);
+        $this->assertEquals("4.750031", $insertedSituation['lng']);
     }
 
     public function testProcessConsecutiveV3FileSnapshots()
@@ -882,6 +886,8 @@ class NdwQueueProcessorTest extends TestCase
         $this->assertEquals('2026-04-02 14:20:00', $insertedSituation['last_publication_time']->format('Y-m-d H:i:s'));
         $this->assertEquals("riskOf", $insertedSituation['probability']);
         $this->assertEquals('2026-04-02 14:19:26', $insertedSituation['version_time']->format('Y-m-d H:i:s'));
+        $this->assertEquals("52.364616", $insertedSituation['lat']);
+        $this->assertEquals("4.860002", $insertedSituation['lng']);
 
         // now process second file with snapshot with overlapping situations but different versions
 
@@ -946,5 +952,7 @@ class NdwQueueProcessorTest extends TestCase
         $this->assertEquals('2026-04-02 14:21:00', $updatedSituation['last_publication_time']->format('Y-m-d H:i:s'));
         $this->assertEquals("riskOf", $updatedSituation['probability']);
         $this->assertEquals('2026-04-02 14:20:24', $updatedSituation['version_time']->format('Y-m-d H:i:s'));
+        $this->assertEquals("52.364616", $updatedSituation['lat']);
+        $this->assertEquals("4.860002", $updatedSituation['lng']);
     }
 }

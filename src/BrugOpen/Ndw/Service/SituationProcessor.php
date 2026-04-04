@@ -185,6 +185,17 @@ class SituationProcessor
                 }
             }
 
+            if ($situationRecord->getLocationReference()) {
+                $locationReference = $situationRecord->getLocationReference();
+
+                $pointByCoordinates = $locationReference->getPointByCoordinates();
+
+                if ($pointByCoordinates) {
+
+                    $pointCoordinates = $pointByCoordinates->getPointCoordinates();
+                }
+            }
+
             if ($situationRecord->getProbabilityOfOccurrence()) {
                 $probability = $situationRecord->getProbabilityOfOccurrence();
             }
