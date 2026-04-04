@@ -13,12 +13,15 @@ use BrugOpen\Datex\Model\InternationalIdentifier;
 use BrugOpen\Datex\Model\LifeCycleManagement;
 use BrugOpen\Datex\Model\LogicalModel;
 use BrugOpen\Datex\Model\Management;
+use BrugOpen\Datex\Model\MessageContainer;
 use BrugOpen\Datex\Model\MultiLingualString;
 use BrugOpen\Datex\Model\OverallPeriod;
+use BrugOpen\Datex\Model\Payload;
 use BrugOpen\Datex\Model\PayloadPublication;
 use BrugOpen\Datex\Model\Point;
 use BrugOpen\Datex\Model\PointByCoordinates;
 use BrugOpen\Datex\Model\PointCoordinates;
+use BrugOpen\Datex\Model\PointLocation;
 use BrugOpen\Datex\Model\Situation;
 use BrugOpen\Datex\Model\SituationRecord;
 use BrugOpen\Datex\Model\Subscription;
@@ -113,6 +116,73 @@ class DatexFileParser
     /**
      *
      * @param string $file
+     * @return MessageContainer|null
+     */
+    public function parseV3File($file)
+    {
+        $messageContainer = null;
+
+        $xmlReader = $this->createXmlReader($file);
+
+        if ($xmlReader) {
+
+            $atMessageContainerNode = false;
+
+            while (true) {
+
+                if ($xmlReader->nodeType == 1) {
+
+                    if ($xmlReader->localName == 'messageContainer') {
+
+                        $atMessageContainerNode = true;
+                        break;
+                    }
+                }
+
+                if (! $xmlReader->read()) {
+                    break;
+                }
+            }
+
+            if ($atMessageContainerNode) {
+
+                $messageContainer = new MessageContainer();
+
+                while (true) {
+
+                    if ($xmlReader->read()) {
+
+                        if (($xmlReader->nodeType == 1) && ($xmlReader->localName == 'payload')) {
+
+                            $payload = $this->parsePayloadNode($xmlReader);
+                            $messageContainer->setPayload($payload);
+
+                            continue;
+                        }
+                        if (($xmlReader->nodeType == 1) && ($xmlReader->localName == 'exchangeInformation')) {
+
+                            if ($exchangeNode = $xmlReader->expand()) {
+
+                                $exchange = $this->parseExchangeInformationNode($exchangeNode);
+                                $messageContainer->setExchangeInformation($exchange);
+                            }
+                        }
+                    } else {
+
+                        break;
+                    }
+                }
+            }
+
+            $xmlReader->close();
+        }
+
+        return $messageContainer;
+    }
+
+    /**
+     *
+     * @param string $file
      * @return NULL|\XMLReader
      */
     public function createXmlReader($file)
@@ -149,7 +219,7 @@ class DatexFileParser
                 if ($this->getSubNode($doc, 'payloadPublication')) {
 
                     if ($publicationTime = $this->getSubNodeValue($doc, 'publicationTime')) {
-                        $file['publicationTime'] = $this->getTimeStamp($publicationTime);
+                        $file['publicationTime'] = $this->parseDateTimeValue($publicationTime);
                     }
 
                     if ($subscriptionNode = $this->getSubNode($doc, 'subscription')) {
@@ -184,35 +254,26 @@ class DatexFileParser
      * @param string $subnodeName
      * @return string|NULL
      */
-    public function getSubNodeValue(DOMNode $node, $subnodeName)
+    public function getSubNodeValue(DOMNode $node, $subnodeName, $useLocalName = false)
     {
         $value = null;
 
-        if ($node->hasChildNodes()) {
+        $subNode = $this->getSubNode($node, $subnodeName, $useLocalName);
 
-            for ($i = 0; $i < $node->childNodes->length; $i++) {
-
-                $childNode = $node->childNodes->item($i);
-
-                if ($childNode->nodeType == XML_ELEMENT_NODE) {
-
-                    if ($childNode->tagName == $subnodeName) {
-                        $value = $childNode->nodeValue;
-                        break;
-                    }
-                }
-            }
+        if ($subNode) {
+            $value = $subNode->nodeValue;
         }
+
         return $value;
     }
 
     /**
      *
-     * @param DOMNode $node
+     * @param \DOMNode $node
      * @param string $subnodeName
-     * @return \DOMNode|NULL
+     * @return \DOMElement|NULL
      */
-    public function getSubNode(DOMNode $node, $subnodeName)
+    public function getSubNode(\DOMNode $node, $subnodeName, $useLocalName = false)
     {
         $subNode = null;
 
@@ -224,9 +285,21 @@ class DatexFileParser
 
                 if ($childNode->nodeType == XML_ELEMENT_NODE) {
 
-                    if ($childNode->tagName == $subnodeName) {
-                        $subNode = $childNode;
-                        break;
+                    /**
+                     * @var \DOMElement $childElement
+                     */
+                    $childElement = $childNode;
+
+                    if ($useLocalName) {
+                        if ($childElement->localName == $subnodeName) {
+                            $subNode = $childElement;
+                            break;
+                        }
+                    } else {
+                        if ($childElement->tagName == $subnodeName) {
+                            $subNode = $childElement;
+                            break;
+                        }
                     }
                 }
             }
@@ -358,37 +431,97 @@ class DatexFileParser
         return $payloadPublication;
     }
 
+    /**
+     * @param \DOMNode $node
+     * @return \BrugOpen\Datex\Model\Payload
+     */
+    public function parsePayloadNode($xmlReader)
+    {
+        $payload = new Payload();
+
+        $situations = array();
+
+        // if ($xmlReader->hasAttributes) {
+        //     $payload->setLang($xmlReader->getAttribute('lang'));
+        // }
+
+        while (true) {
+
+            if ($xmlReader->read()) {
+
+                if ($xmlReader->nodeType == 1) {
+
+                    if ($expandedNode = $xmlReader->expand()) {
+
+                        if ($xmlReader->localName == 'publicationTime') {
+
+                            $payload->setPublicationTime($this->parseDateTimeValue($expandedNode->nodeValue));
+                        } else if ($xmlReader->localName == 'publicationCreator') {
+
+                            $publicationCreator = new InternationalIdentifier();
+                            $publicationCreator->setCountry($this->getSubNodeValue($expandedNode, 'country'));
+                            $publicationCreator->setNationalIdentifier($this->getSubNodeValue($expandedNode, 'nationalIdentifier'));
+
+                            $payload->setPublicationCreator($publicationCreator);
+                        } else if ($xmlReader->localName == 'situation') {
+
+                            $situation = $this->parseSituationNode($expandedNode);
+                            $situations[] = $situation;
+                        }
+                    } else {
+
+                        break;
+                    }
+                } else if ($xmlReader->nodeType == \XMLReader::END_ELEMENT) {
+
+                    if ($xmlReader->localName == 'payload') {
+                        break;
+                    }
+                }
+            } else {
+
+                break;
+            }
+        }
+
+        if ($situations) {
+            $payload->setSituations($situations);
+        }
+
+        return $payload;
+    }
+
     public function parseSituationNode($node)
     {
         $situation = new Situation();
 
         $situation->setId($node->getAttribute('id'));
         $situation->setVersion($node->getAttribute('version'));
-        $situation->setOverallSeverity($this->getSubNodeValue($node, 'overallSeverity'));
-        $situation->setSituationVersionTime($this->parseDateTimeValue($this->getSubNodeValue($node, 'situationVersionTime')));
+        $situation->setOverallSeverity($this->getSubNodeValue($node, 'overallSeverity', true));
+        $situation->setSituationVersionTime($this->parseDateTimeValue($this->getSubNodeValue($node, 'situationVersionTime', true)));
 
-        if ($headerInformationNode = $this->getSubNode($node, 'headerInformation')) {
+        if ($headerInformationNode = $this->getSubNode($node, 'headerInformation', true)) {
 
             $headerInformation = new HeaderInformation();
-            $headerInformation->setConfidentiality($this->getSubNodeValue($headerInformationNode, 'confidentiality'));
-            $headerInformation->setInformationStatus($this->getSubNodeValue($headerInformationNode, 'informationStatus'));
+            $headerInformation->setConfidentiality($this->getSubNodeValue($headerInformationNode, 'confidentiality', true));
+            $headerInformation->setInformationStatus($this->getSubNodeValue($headerInformationNode, 'informationStatus', true));
 
             $situation->setHeaderInformation($headerInformation);
         }
 
-        if ($situationRecordNode = $this->getSubNode($node, 'situationRecord')) {
+        if ($situationRecordNode = $this->getSubNode($node, 'situationRecord', true)) {
 
             $situationRecord = new SituationRecord();
 
             $situationRecord->setId($situationRecordNode->getAttribute('id'));
             $situationRecord->setVersion($situationRecordNode->getAttribute('version'));
-            $situationRecord->setSituationRecordCreationTime($this->parseDateTimeValue($this->getSubNodeValue($situationRecordNode, 'situationRecordCreationTime')));
-            $situationRecord->setSituationRecordVersionTime($this->parseDateTimeValue($this->getSubNodeValue($situationRecordNode, 'situationRecordVersionTime')));
-            $situationRecord->setProbabilityOfOccurrence($this->getSubNodeValue($situationRecordNode, 'probabilityOfOccurrence'));
+            $situationRecord->setSituationRecordCreationTime($this->parseDateTimeValue($this->getSubNodeValue($situationRecordNode, 'situationRecordCreationTime', true)));
+            $situationRecord->setSituationRecordVersionTime($this->parseDateTimeValue($this->getSubNodeValue($situationRecordNode, 'situationRecordVersionTime', true)));
+            $situationRecord->setProbabilityOfOccurrence($this->getSubNodeValue($situationRecordNode, 'probabilityOfOccurrence', true));
 
-            if ($sourceNode = $this->getSubNode($situationRecordNode, 'source')) {
+            if ($sourceNode = $this->getSubNode($situationRecordNode, 'source', true)) {
 
-                if ($sourceNameNode = $this->getSubNode($sourceNode, 'sourceName')) {
+                if ($sourceNameNode = $this->getSubNode($sourceNode, 'sourceName', true)) {
 
                     $source = $this->parseMultiLingualValueString($sourceNameNode);
 
@@ -396,17 +529,17 @@ class DatexFileParser
                 }
             }
 
-            if ($validityNode = $this->getSubNode($situationRecordNode, 'validity')) {
+            if ($validityNode = $this->getSubNode($situationRecordNode, 'validity', true)) {
 
                 $validity = new Validity();
 
-                $validity->setValidityStatus($this->getSubNodeValue($validityNode, 'validityStatus'));
+                $validity->setValidityStatus($this->getSubNodeValue($validityNode, 'validityStatus', true));
 
-                if ($validityTimeSpecificationNode = $this->getSubNode($validityNode, 'validityTimeSpecification')) {
+                if ($validityTimeSpecificationNode = $this->getSubNode($validityNode, 'validityTimeSpecification', true)) {
 
                     $validityTimeSpecification = new OverallPeriod();
-                    $validityTimeSpecification->setOverallStartTime($this->parseDateTimeValue($this->getSubNodeValue($validityTimeSpecificationNode, 'overallStartTime')));
-                    $validityTimeSpecification->setOverallEndTime($this->parseDateTimeValue($this->getSubNodeValue($validityTimeSpecificationNode, 'overallEndTime')));
+                    $validityTimeSpecification->setOverallStartTime($this->parseDateTimeValue($this->getSubNodeValue($validityTimeSpecificationNode, 'overallStartTime', true)));
+                    $validityTimeSpecification->setOverallEndTime($this->parseDateTimeValue($this->getSubNodeValue($validityTimeSpecificationNode, 'overallEndTime', true)));
 
                     $validity->setValidityTimeSpecification($validityTimeSpecification);
                 }
@@ -414,57 +547,57 @@ class DatexFileParser
                 $situationRecord->setValidity($validity);
             }
 
-            if ($groupOfLocationsNode = $this->getSubNode($situationRecordNode, 'groupOfLocations')) {
+            if ($groupOfLocationsNode = $this->getSubNode($situationRecordNode, 'groupOfLocations', true)) {
 
                 $groupOfLocations = new Point();
 
-                if ($locationForDisplayNode = $this->getSubNode($groupOfLocationsNode, 'locationForDisplay')) {
+                if ($locationForDisplayNode = $this->getSubNode($groupOfLocationsNode, 'locationForDisplay', true)) {
 
                     $locationForDisplay = new PointCoordinates();
-                    $locationForDisplay->setLatitude($this->getSubNodeValue($locationForDisplayNode, 'latitude'));
-                    $locationForDisplay->setLongitude($this->getSubNodeValue($locationForDisplayNode, 'longitude'));
+                    $locationForDisplay->setLatitude($this->getSubNodeValue($locationForDisplayNode, 'latitude', true));
+                    $locationForDisplay->setLongitude($this->getSubNodeValue($locationForDisplayNode, 'longitude', true));
 
                     $groupOfLocations->setLocationForDisplay($locationForDisplay);
                 }
 
-                if ($alertCPointNode = $this->getSubNode($groupOfLocationsNode, 'alertCPoint')) {
+                if ($alertCPointNode = $this->getSubNode($groupOfLocationsNode, 'alertCPoint', true)) {
 
                     $alertCPoint = new AlertCPoint();
 
-                    $alertCPoint->setAlertCLocationCountryCode($this->getSubNodeValue($alertCPointNode, 'alertCLocationCountryCode'));
-                    $alertCPoint->setAlertCLocationTableNumber($this->getSubNodeValue($alertCPointNode, 'alertCLocationTableNumber'));
-                    $alertCPoint->setAlertCLocationTableVersion($this->getSubNodeValue($alertCPointNode, 'alertCLocationTableVersion'));
+                    $alertCPoint->setAlertCLocationCountryCode($this->getSubNodeValue($alertCPointNode, 'alertCLocationCountryCode', true));
+                    $alertCPoint->setAlertCLocationTableNumber($this->getSubNodeValue($alertCPointNode, 'alertCLocationTableNumber', true));
+                    $alertCPoint->setAlertCLocationTableVersion($this->getSubNodeValue($alertCPointNode, 'alertCLocationTableVersion', true));
 
-                    if ($alertCDirectionNode = $this->getSubNode($alertCPointNode, 'alertCDirection')) {
+                    if ($alertCDirectionNode = $this->getSubNode($alertCPointNode, 'alertCDirection', true)) {
 
                         $alertCDirection = new AlertCDirection();
 
-                        $alertCDirection->setAlertCDirectionCoded($this->getSubNodeValue($alertCDirectionNode, 'alertCDirectionCoded'));
+                        $alertCDirection->setAlertCDirectionCoded($this->getSubNodeValue($alertCDirectionNode, 'alertCDirectionCoded', true));
 
-                        if ($alertCDirectionNamedNode = $this->getSubNode($alertCDirectionNode, 'alertCDirectionNamed')) {
+                        if ($alertCDirectionNamedNode = $this->getSubNode($alertCDirectionNode, 'alertCDirectionNamed', true)) {
 
                             $alertCDirection->setAlertCDirectionNamed($this->parseMultiLingualValueString($alertCDirectionNamedNode));
                         }
 
-                        $alertCDirection->setAlertCDirectionSense($this->parseBooleanString($this->getSubNodeValue($alertCDirectionNode, 'alertCDirectionSense')));
+                        $alertCDirection->setAlertCDirectionSense($this->parseBooleanString($this->getSubNodeValue($alertCDirectionNode, 'alertCDirectionSense', true)));
 
                         $alertCPoint->setAlertCDirection($alertCDirection);
                     }
 
-                    if ($alertCMethod2PrimaryPointLocationNode = $this->getSubNode($alertCPointNode, 'alertCMethod2PrimaryPointLocation')) {
+                    if ($alertCMethod2PrimaryPointLocationNode = $this->getSubNode($alertCPointNode, 'alertCMethod2PrimaryPointLocation', true)) {
 
                         $alertCMethod2PrimaryPointLocation = new AlertCMethod2PrimaryPointLocation();
 
-                        if ($alertCLocationNode = $this->getSubNode($alertCMethod2PrimaryPointLocationNode, 'alertCLocation')) {
+                        if ($alertCLocationNode = $this->getSubNode($alertCMethod2PrimaryPointLocationNode, 'alertCLocation', true)) {
 
                             $alertCLocation = new AlertCLocation();
 
-                            if ($alertCLocationNameNode = $this->getSubNode($alertCLocationNode, 'alertCLocationName')) {
+                            if ($alertCLocationNameNode = $this->getSubNode($alertCLocationNode, 'alertCLocationName', true)) {
 
                                 $alertCLocation->setAlertCLocationName($this->parseMultiLingualValueString($alertCLocationNameNode));
                             }
 
-                            $alertCLocation->setSpecificLocation($this->getSubNodeValue($alertCLocationNode, 'specificLocation'));
+                            $alertCLocation->setSpecificLocation($this->getSubNodeValue($alertCLocationNode, 'specificLocation', true));
 
                             $alertCMethod2PrimaryPointLocation->setAlertCLocation($alertCLocation);
                         }
@@ -475,17 +608,17 @@ class DatexFileParser
                     $groupOfLocations->setAlertCPoint($alertCPoint);
                 }
 
-                if ($pointByCoordinatesNode = $this->getSubNode($groupOfLocationsNode, 'pointByCoordinates')) {
+                if ($pointByCoordinatesNode = $this->getSubNode($groupOfLocationsNode, 'pointByCoordinates', true)) {
 
                     $pointByCoordinates = new PointByCoordinates();
 
-                    $pointByCoordinates->setBearing($this->getSubNodeValue($pointByCoordinatesNode, 'bearing'));
+                    $pointByCoordinates->setBearing($this->getSubNodeValue($pointByCoordinatesNode, 'bearing', true));
 
-                    if ($pointCoordinatesNode = $this->getSubNode($pointByCoordinatesNode, 'pointCoordinates')) {
+                    if ($pointCoordinatesNode = $this->getSubNode($pointByCoordinatesNode, 'pointCoordinates', true)) {
 
                         $pointCoordinates = new PointCoordinates();
-                        $pointCoordinates->setLatitude($this->getSubNodeValue($pointCoordinatesNode, 'latitude'));
-                        $pointCoordinates->setLongitude($this->getSubNodeValue($pointCoordinatesNode, 'longitude'));
+                        $pointCoordinates->setLatitude($this->getSubNodeValue($pointCoordinatesNode, 'latitude', true));
+                        $pointCoordinates->setLongitude($this->getSubNodeValue($pointCoordinatesNode, 'longitude', true));
 
                         $pointByCoordinates->setPointCoordinates($pointCoordinates);
                     }
@@ -495,34 +628,43 @@ class DatexFileParser
                 $situationRecord->setGroupOfLocations($groupOfLocations);
             }
 
-            if ($managementNode = $this->getSubNode($situationRecordNode, 'management')) {
+            $locationReferenceNode = $this->getSubNode($situationRecordNode, 'locationReference', true);
+
+            if ($locationReferenceNode) {
+
+                $locationReference = $this->parseLocationReferenceNode($locationReferenceNode);
+
+                $situationRecord->setLocationReference($locationReference);
+            }
+
+            if ($managementNode = $this->getSubNode($situationRecordNode, 'management', true)) {
 
                 $management = new Management();
 
-                if ($lifeCycleManagementNode = $this->getSubNode($managementNode, 'lifeCycleManagement')) {
+                if ($lifeCycleManagementNode = $this->getSubNode($managementNode, 'lifeCycleManagement', true)) {
 
                     $lifeCycleManagement = new LifeCycleManagement();
-                    $lifeCycleManagement->setCancel($this->parseBooleanString($this->getSubNodeValue($lifeCycleManagementNode, 'cancel')));
-                    $lifeCycleManagement->setEnd($this->parseBooleanString($this->getSubNodeValue($lifeCycleManagementNode, 'end')));
+                    $lifeCycleManagement->setCancel($this->parseBooleanString($this->getSubNodeValue($lifeCycleManagementNode, 'cancel', true)));
+                    $lifeCycleManagement->setEnd($this->parseBooleanString($this->getSubNodeValue($lifeCycleManagementNode, 'end', true)));
 
                     $management->setLifeCycleManagement($lifeCycleManagement);
                 }
 
-                if ($filterExitManagementNode = $this->getSubNode($managementNode, 'filterExitManagement')) {
+                if ($filterExitManagementNode = $this->getSubNode($managementNode, 'filterExitManagement', true)) {
 
-                    $filterExitManagement = new FilterExitManagement();
-                    $filterExitManagement->setCancel($this->parseBooleanString($this->getSubNodeValue($filterExitManagementNode, 'filterEnd')));
-                    $filterExitManagement->setEnd($this->parseBooleanString($this->getSubNodeValue($filterExitManagementNode, 'filterOutOfRange')));
+                    // $filterExitManagement = new FilterExitManagement();
+                    // $filterExitManagement->setCancel($this->parseBooleanString($this->getSubNodeValue($filterExitManagementNode, 'filterEnd', true)));
+                    // $filterExitManagement->setEnd($this->parseBooleanString($this->getSubNodeValue($filterExitManagementNode, 'filterOutOfRange', true)));
 
-                    $management->setFilterExitManagement($filterExitManagement);
+                    // $management->setFilterExitManagement($filterExitManagement);
                 }
 
                 $situationRecord->setManagement($management);
             }
 
-            $situationRecord->setOperatorActionStatus($this->getSubNodeValue($situationRecordNode, 'operatorActionStatus'));
-            $situationRecord->setComplianceOption($this->getSubNodeValue($situationRecordNode, 'complianceOption'));
-            $situationRecord->setGeneralNetworkManagementType($this->getSubNodeValue($situationRecordNode, 'generalNetworkManagementType'));
+            $situationRecord->setOperatorActionStatus($this->getSubNodeValue($situationRecordNode, 'operatorActionStatus', true));
+            $situationRecord->setComplianceOption($this->getSubNodeValue($situationRecordNode, 'complianceOption', true));
+            $situationRecord->setGeneralNetworkManagementType($this->getSubNodeValue($situationRecordNode, 'generalNetworkManagementType', true));
 
             $situation->setSituationRecord($situationRecord);
         }
@@ -544,7 +686,7 @@ class DatexFileParser
         }
 
         if ($versionTime) {
-            $situation['versionTime'] = $this->getTimeStamp($versionTime);
+            $situation['versionTime'] = $this->parseDateTimeValue($versionTime);
         }
 
         if ($probability = $this->getSubNodeValue($node, 'probabilityOfOccurrence')) {
@@ -569,28 +711,152 @@ class DatexFileParser
         }
 
         if ($overallStartTime = $this->getSubNodeValue($node, 'overallStartTime')) {
-            $situation['overallStartTime'] = $this->getTimeStamp($overallStartTime);
+            $situation['overallStartTime'] = $this->parseDateTimeValue($overallStartTime);
         }
         if ($overallEndTime = $this->getSubNodeValue($node, 'overallEndTime')) {
-            $situation['overallEndTime'] = $this->getTimeStamp($overallEndTime);
+            $situation['overallEndTime'] = $this->parseDateTimeValue($overallEndTime);
         } else {
             $situation['overallEndTime'] = null;
         }
 
-        if ($operatorActionStatus = $this->getSubNodeValue($node, 'operatorActionStatus')) {
+        if ($operatorActionStatus = $this->getSubNodeValue($node, 'operatorActionStatus', true)) {
             $situation['operatorActionStatus'] = $operatorActionStatus;
         }
 
-        if ($lifeCycleManagementNode = $this->getSubNode($node, 'lifeCycleManagement')) {
-            if ($this->getSubNodeValue($lifeCycleManagementNode, 'end') == 'true') {
+        if ($lifeCycleManagementNode = $this->getSubNode($node, 'lifeCycleManagement', true)) {
+            if ($this->getSubNodeValue($lifeCycleManagementNode, 'end', true) == 'true') {
                 $situation['lifeCycleEnd'] = 'true';
             }
-            if ($this->getSubNodeValue($lifeCycleManagementNode, 'cancel') == 'true') {
+            if ($this->getSubNodeValue($lifeCycleManagementNode, 'cancel', true) == 'true') {
                 $situation['lifeCycleCancel'] = 'true';
             }
         }
 
         return $situation;
+    }
+
+    public function parseLocationReferenceNode($locationReferenceNode)
+    {
+        $locationReference = new PointLocation();
+
+        // <sit:locationReference xsi:type="loc:PointLocation">
+        //   <loc:externalReferencing>
+        //     <loc:externalLocationCode>NLZAA002360561800012</loc:externalLocationCode>
+        //     <loc:externalReferencingSystem>RIS-index</loc:externalReferencingSystem>
+        //   </loc:externalReferencing>
+        //   <loc:supplementaryPositionalDescription>
+        //     <loc:carriageway>
+        //       <loc:carriageway>mainCarriageway</loc:carriageway>
+        //     </loc:carriageway>
+        //   </loc:supplementaryPositionalDescription>
+        //   <loc:pointByCoordinates>
+        //     <loc:pointCoordinates>
+        //       <loc:latitude>52.42779</loc:latitude>
+        //       <loc:longitude>4.834402</loc:longitude>
+        //     </loc:pointCoordinates>
+        //   </loc:pointByCoordinates>
+        //   <loc:alertCPoint xsi:type="loc:AlertCMethod2Point">
+        //     <loc:alertCLocationCountryCode>8</loc:alertCLocationCountryCode>
+        //     <loc:alertCLocationTableNumber>6.13</loc:alertCLocationTableNumber>
+        //     <loc:alertCLocationTableVersion>A</loc:alertCLocationTableVersion>
+        //     <loc:alertCDirection>
+        //       <loc:alertCDirectionCoded>positive</loc:alertCDirectionCoded>
+        //       <loc:alertCAffectedDirection>both</loc:alertCAffectedDirection>
+        //     </loc:alertCDirection>
+        //     <loc:alertCMethod2PrimaryPointLocation>
+        //       <loc:alertCLocation>
+        //         <loc:specificLocation>22220</loc:specificLocation>
+        //       </loc:alertCLocation>
+        //     </loc:alertCMethod2PrimaryPointLocation>
+        //   </loc:alertCPoint>
+        // </sit:locationReference>
+
+        $externalReferencingNode = $this->getSubNode($locationReferenceNode, 'externalReferencing', true);
+        if ($externalReferencingNode) {
+
+            $externalReferencing = new \BrugOpen\Datex\Model\ExternalReferencing();
+
+            $externalReferencing->setExternalLocationCode($this->getSubNodeValue($externalReferencingNode, 'externalLocationCode', true));
+            $externalReferencing->setExternalReferencingSystem($this->getSubNodeValue($externalReferencingNode, 'externalReferencingSystem', true));
+
+            $locationReference->setExternalReferencing($externalReferencing);
+        }
+
+        $supplementaryPositionalDescriptionNode = $this->getSubNode($locationReferenceNode, 'supplementaryPositionalDescription', true);
+        if ($supplementaryPositionalDescriptionNode) {
+
+            $supplementaryPositionalDescription = trim($supplementaryPositionalDescriptionNode->nodeValue);
+
+            if ($supplementaryPositionalDescription != '') {
+                $locationReference->setSupplementaryPositionalDescription($supplementaryPositionalDescription);
+            }
+        }
+
+        if ($pointByCoordinatesNode = $this->getSubNode($locationReferenceNode, 'pointByCoordinates', true)) {
+
+            $pointByCoordinates = new PointByCoordinates();
+
+            $pointByCoordinates->setBearing($this->getSubNodeValue($pointByCoordinatesNode, 'bearing', true));
+
+            if ($pointCoordinatesNode = $this->getSubNode($pointByCoordinatesNode, 'pointCoordinates', true)) {
+
+                $pointCoordinates = new PointCoordinates();
+                $pointCoordinates->setLatitude($this->getSubNodeValue($pointCoordinatesNode, 'latitude', true));
+                $pointCoordinates->setLongitude($this->getSubNodeValue($pointCoordinatesNode, 'longitude', true));
+
+                $pointByCoordinates->setPointCoordinates($pointCoordinates);
+            }
+
+            $locationReference->setPointByCoordinates($pointByCoordinates);
+        }
+
+        if ($alertCPointNode = $this->getSubNode($locationReferenceNode, 'alertCPoint', true)) {
+
+            $alertCPoint = new AlertCPoint();
+
+            $alertCPoint->setAlertCLocationCountryCode($this->getSubNodeValue($alertCPointNode, 'alertCLocationCountryCode', true));
+            $alertCPoint->setAlertCLocationTableNumber($this->getSubNodeValue($alertCPointNode, 'alertCLocationTableNumber', true));
+            $alertCPoint->setAlertCLocationTableVersion($this->getSubNodeValue($alertCPointNode, 'alertCLocationTableVersion', true));
+
+            if ($alertCDirectionNode = $this->getSubNode($alertCPointNode, 'alertCDirection', true)) {
+
+                $alertCDirection = new AlertCDirection();
+
+                $alertCDirection->setAlertCDirectionCoded($this->getSubNodeValue($alertCDirectionNode, 'alertCDirectionCoded', true));
+
+                if ($alertCDirectionNamedNode = $this->getSubNode($alertCDirectionNode, 'alertCDirectionNamed', true)) {
+
+                    $alertCDirection->setAlertCDirectionNamed($this->parseMultiLingualValueString($alertCDirectionNamedNode));
+                }
+
+                $alertCDirection->setAlertCDirectionSense($this->parseBooleanString($this->getSubNodeValue($alertCDirectionNode, 'alertCDirectionSense', true)));
+
+                $alertCPoint->setAlertCDirection($alertCDirection);
+            }
+
+            if ($alertCMethod2PrimaryPointLocationNode = $this->getSubNode($alertCPointNode, 'alertCMethod2PrimaryPointLocation', true)) {
+
+                $alertCMethod2PrimaryPointLocation = new AlertCMethod2PrimaryPointLocation();
+
+                if ($alertCLocationNode = $this->getSubNode($alertCMethod2PrimaryPointLocationNode, 'alertCLocation', true)) {
+
+                    $alertCLocation = new AlertCLocation();
+
+                    if ($alertCLocationNameNode = $this->getSubNode($alertCLocationNode, 'alertCLocationName', true)) {
+
+                        $alertCLocation->setAlertCLocationName($this->parseMultiLingualValueString($alertCLocationNameNode));
+                    }
+
+                    $alertCLocation->setSpecificLocation($this->getSubNodeValue($alertCLocationNode, 'specificLocation', true));
+                }
+
+                $alertCMethod2PrimaryPointLocation->setAlertCLocation($alertCLocation);
+            }
+
+            $locationReference->setAlertCPoint($alertCPoint);
+        }
+
+        return $locationReference;
     }
 
     public function parseMultiLingualValueString($node)
@@ -599,16 +865,24 @@ class DatexFileParser
 
         $valuesByLang = array();
 
-        if ($valuesNode = $this->getSubNode($node, 'values')) {
+        if ($valuesNode = $this->getSubNode($node, 'values', true)) {
 
             if ($valuesNode->hasChildNodes()) {
 
                 foreach ($valuesNode->childNodes as $valueNode) {
 
-                    $lang = $valueNode->getAttribute('lang');
-                    $value = $valueNode->nodeValue;
+                    if ($valueNode->nodeType == XML_ELEMENT_NODE) {
 
-                    $valuesByLang[$lang] = $value;
+                        /**
+                         * @var \DOMElement $valueElement
+                         */
+                        $valueElement = $valueNode;
+
+                        $lang = $valueElement->getAttribute('lang');
+                        $value = $valueElement->nodeValue;
+
+                        $valuesByLang[$lang] = $value;
+                    }
                 }
             }
         }
@@ -616,6 +890,69 @@ class DatexFileParser
         $multiLingualString->setValuesByLang($valuesByLang);
 
         return $multiLingualString;
+    }
+
+    /**
+     * @param \DOMNode $node
+     * @return \BrugOpen\Datex\Model\ExchangeInformation
+     */
+    public function parseExchangeInformationNode($node)
+    {
+        $exchangeInformation = new \BrugOpen\Datex\Model\ExchangeInformation();
+
+        // Parse <exchangeContext>
+        $exchangeContextNode = $this->getSubNode($node, 'exchangeContext', true);
+        if ($exchangeContextNode) {
+            $exchangeContext = $this->parseExchangeContextNode($exchangeContextNode);
+            $exchangeInformation->setExchangeContext($exchangeContext);
+        }
+
+        // Parse <dynamicInformation>
+        $dynamicInformationNode = $this->getSubNode($node, 'dynamicInformation', true);
+        if ($dynamicInformationNode) {
+            $dynamicInformation = $this->parseDynamicInformationNode($dynamicInformationNode);
+            $exchangeInformation->setDynamicInformation($dynamicInformation);
+        }
+
+        return $exchangeInformation;
+    }
+
+    /**
+     *
+     * @param \DOMNode $node
+     * @return \BrugOpen\Datex\Model\ExchangeContext
+     */
+    public function parseExchangeContextNode($node)
+    {
+        $exchangeContext = new \BrugOpen\Datex\Model\ExchangeContext();
+        $exchangeContext->setCodedExchangeProtocol($this->getSubNodeValue($node, 'codedExchangeProtocol', true));
+        $exchangeContext->setExchangeSpecificationVersion($this->getSubNodeValue($node, 'exchangeSpecificationVersion', true));
+
+        // Parse <supplierOrCisRequester>/<internationalIdentifier>
+        if ($supplierNode = $this->getSubNode($node, 'supplierOrCisRequester', true)) {
+            if ($identifierNode = $this->getSubNode($supplierNode, 'internationalIdentifier', true)) {
+                $internationalIdentifier = new \BrugOpen\Datex\Model\InternationalIdentifier();
+                $internationalIdentifier->setCountry($this->getSubNodeValue($identifierNode, 'country', true));
+                $internationalIdentifier->setNationalIdentifier($this->getSubNodeValue($identifierNode, 'nationalIdentifier', true));
+                $exchangeContext->setInternationalIdentifier($internationalIdentifier);
+            }
+        }
+
+        return $exchangeContext;
+    }
+
+    /**
+     *
+     * @param \DOMNode $node
+     * @return \BrugOpen\Datex\Model\DynamicInformation
+     */
+    public function parseDynamicInformationNode($node)
+    {
+        $dynamicInformation = new \BrugOpen\Datex\Model\DynamicInformation();
+        $dynamicInformation->setExchangeStatus($this->getSubNodeValue($node, 'exchangeStatus', true));
+        $timestamp = $this->getSubNodeValue($node, 'messageGenerationTimestamp', true);
+        $dynamicInformation->setMessageGenerationTimestamp($this->parseDateTimeValue($timestamp));
+        return $dynamicInformation;
     }
 
     /**
