@@ -528,4 +528,53 @@ class DatexFileParserTest extends TestCase
         $this->assertNotEquals(0, $dateTime->getTimestamp());
         $this->assertEquals(strtotime('2026-02-06T09:14:46Z'), $dateTime->getTimestamp());
     }
+
+    public function testParseSnapshotDatexV3()
+    {
+        $testDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFile = $testDir . 'brugdata-20260402140310.xml.gz';
+
+        $parser = new DatexFileParser();
+
+        $messageContainer = $parser->parseV3File($testFile);
+
+        $this->assertNotNull($messageContainer);
+
+        $this->assertNotNull($messageContainer->getPayload());
+
+        $this->assertNotNull($messageContainer->getExchangeInformation());
+
+        $this->assertNotNull($messageContainer->getExchangeInformation()->getExchangeContext());
+
+        $this->assertEquals('snapshotPull', $messageContainer->getExchangeInformation()->getExchangeContext()->getCodedExchangeProtocol());
+
+        $situations = $messageContainer->getPayload()->getSituations();
+
+        $this->assertCount(1586, $situations);
+
+        /**
+         * @var \BrugOpen\Datex\Model\Situation $situation
+         */
+        $situation = $situations[0];
+
+        $this->assertNotNull($situation);
+        $this->assertEquals('BMS01_NLZAA002360561800012_117118075', $situation->getId());
+        $this->assertEquals('unknown', $situation->getOverallSeverity());
+        $this->assertNotNull($situation->getSituationVersionTime());
+        $this->assertEquals(strtotime('2026-04-01T13:21:33.187350Z'), $situation->getSituationVersionTime()
+            ->getTimestamp());
+
+        $headerInformation = $situation->getHeaderInformation();
+        $this->assertNotNull($headerInformation);
+        $this->assertEquals('noRestriction', $headerInformation->getConfidentiality());
+        $this->assertEquals('real', $headerInformation->getInformationStatus());
+
+        $situationRecord = $situation->getSituationRecord();
+
+        $this->assertNotNull($situationRecord);
+
+        $this->assertEquals('1', $situationRecord->getVersion());
+        $this->assertEquals(strtotime('2026-04-01T13:21:33.187350Z'), $situationRecord->getSituationRecordCreationTime()
+            ->getTimestamp());
+    }
 }
