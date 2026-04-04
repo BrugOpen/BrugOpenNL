@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Ndw\Service;
 
 use BrugOpen\Core\EventDispatcher;
@@ -50,7 +51,6 @@ class SituationProcessor
         if ($this->tableManager == null) {
 
             $this->tableManager = $this->context->getService('BrugOpen.TableManager');
-
         }
 
         return $this->tableManager;
@@ -121,9 +121,17 @@ class SituationProcessor
     {
         $situationId = $situation->getId();
 
+        $version = $situation->getVersion();
+
+        if ($version == null) {
+            if ($situation->getSituationRecord()) {
+                $version = $situation->getSituationRecord()->getVersion();
+            }
+        }
+
         $keys = array();
         $keys['id'] = $situationId;
-        $keys['version'] = $situation->getVersion();
+        $keys['version'] = $version;
 
         $tableManager = $this->getTableManager();
         $log = $this->getLog();
@@ -164,13 +172,9 @@ class SituationProcessor
                             if ($alertCLocation->getSpecificLocation()) {
 
                                 $location = $alertCLocation->getSpecificLocation();
-
                             }
-
                         }
-
                     }
-
                 }
 
                 $pointByCoordinates = $groupOfLocations->getPointByCoordinates();
@@ -236,7 +240,6 @@ class SituationProcessor
 
                 $location = $matches[1];
             }
-
         }
 
         if ($existingSituation) {
@@ -381,7 +384,6 @@ class SituationProcessor
             if ($situationId == '') {
 
                 continue;
-
             }
 
             $keys = array();
@@ -401,11 +403,8 @@ class SituationProcessor
                     if (($lastPublicationDate == null) || ($situation['last_publication_time']->getTimestamp() > $lastPublicationDate->getTimestamp())) {
 
                         $lastPublicationDate = $situation['last_publication_time'];
-
                     }
-
                 }
-
             }
 
             if ($lastPublicationDate) {
@@ -429,16 +428,13 @@ class SituationProcessor
                         if ($activeOperation['time_end']) {
 
                             $hasTimeEnd = true;
-
                         }
-
                     }
 
                     if (!$hasTimeEnd) {
 
                         $updateValues['datetime_end'] = $publicationDateTime->getTimestamp();
                         $updateValues['time_end'] = $publicationDateTime;
-
                     }
 
                     $keys = array();
@@ -451,15 +447,10 @@ class SituationProcessor
                     if ($eventDispatcher) {
 
                         $eventDispatcher->postEvent('Operation.update', array($operationId));
-
                     }
-
                 }
-
             }
-
         }
-
     }
 
     /**
@@ -502,7 +493,7 @@ class SituationProcessor
                         } else if ($situation['probability'] == 'probable') {
                             $anyCertainty = true;
                         } else if ($situation['probability'] == 'riskOf') {
-                            $numRiskOf ++;
+                            $numRiskOf++;
                         }
                     }
                 }
