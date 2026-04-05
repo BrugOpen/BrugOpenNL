@@ -1,4 +1,5 @@
 <?php
+
 namespace BrugOpen\Datex\Model;
 
 class MultiLingualString
@@ -12,7 +13,7 @@ class MultiLingualString
 
     /**
      *
-     * @return multitype:string
+     * @return string[]
      */
     public function getValuesByLang()
     {
@@ -21,7 +22,7 @@ class MultiLingualString
 
     /**
      *
-     * @param multitype:string $valuesByLang
+     * @param string[] $valuesByLang
      */
     public function setValuesByLang($valuesByLang)
     {
