@@ -588,4 +588,124 @@ class DatexFileParserTest extends TestCase
         $this->assertEquals(strtotime('2026-04-01T13:21:33.187350Z'), $situationRecord->getSituationRecordCreationTime()
             ->getTimestamp());
     }
+
+    public function testParseStatusPushDatexV3()
+    {
+        $testDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFile = $testDir . 'brugdata-20260405160129-973138-push.xml.gz';
+
+        $parser = new DatexFileParser();
+
+        $messageContainer = $parser->parseV3File($testFile);
+
+        $this->assertNotNull($messageContainer);
+
+        $this->assertNotNull($messageContainer->getPayload());
+
+        $this->assertNotNull($messageContainer->getExchangeInformation());
+
+        $this->assertNotNull($messageContainer->getExchangeInformation()->getExchangeContext());
+
+        $this->assertEquals('statefulPush', $messageContainer->getExchangeInformation()->getExchangeContext()->getCodedExchangeProtocol());
+
+        $agent = $messageContainer->getExchangeInformation()->getExchangeContext()->getSupplierOrCisRequester();
+
+        $this->assertNotNull($agent);
+
+        $internationalIdentifier = $agent->getInternationalIdentifier();
+
+        $this->assertNotNull($internationalIdentifier);
+
+        $this->assertEquals("NL", $internationalIdentifier->getCountry());
+        $this->assertEquals("NLNDW", $internationalIdentifier->getNationalIdentifier());
+
+        $situations = $messageContainer->getPayload()->getSituations();
+
+        $this->assertCount(1, $situations);
+
+        /**
+         * @var \BrugOpen\Datex\Model\Situation $situation
+         */
+        $situation = $situations[0];
+
+        $this->assertNotNull($situation);
+        $this->assertEquals('BMS01_NLSPD002020468900036_120601779', $situation->getId());
+        $this->assertEquals('unknown', $situation->getOverallSeverity());
+        $this->assertNotNull($situation->getSituationVersionTime());
+        $this->assertEquals(strtotime('2026-04-05T14:01:28Z'), $situation->getSituationVersionTime()
+            ->getTimestamp());
+
+        $headerInformation = $situation->getHeaderInformation();
+        $this->assertNotNull($headerInformation);
+        $this->assertEquals('noRestriction', $headerInformation->getConfidentiality());
+        $this->assertEquals('real', $headerInformation->getInformationStatus());
+
+        $situationRecord = $situation->getSituationRecord();
+
+        $this->assertNotNull($situationRecord);
+
+        $this->assertEquals('5', $situationRecord->getVersion());
+        $this->assertEquals(strtotime('2026-04-05T14:01:28Z'), $situationRecord->getSituationRecordCreationTime()
+            ->getTimestamp());
+    }
+
+    public function testParseSnapshotPushDatexV3()
+    {
+        $testDir = dirname(dirname(dirname(dirname(dirname(__FILE__))))) . DIRECTORY_SEPARATOR . 'testfiles' . DIRECTORY_SEPARATOR;
+        $testFile = $testDir . 'brugdata-20260405155905-644442-snapshot-push.xml.gz';
+
+        $parser = new DatexFileParser();
+
+        $messageContainer = $parser->parseV3File($testFile);
+
+        $this->assertNotNull($messageContainer);
+
+        $this->assertNotNull($messageContainer->getPayload());
+
+        $this->assertNotNull($messageContainer->getExchangeInformation());
+
+        $this->assertNotNull($messageContainer->getExchangeInformation()->getExchangeContext());
+
+        $this->assertEquals('statefulPush', $messageContainer->getExchangeInformation()->getExchangeContext()->getCodedExchangeProtocol());
+
+        $agent = $messageContainer->getExchangeInformation()->getExchangeContext()->getSupplierOrCisRequester();
+
+        $this->assertNotNull($agent);
+
+        $internationalIdentifier = $agent->getInternationalIdentifier();
+
+        $this->assertNotNull($internationalIdentifier);
+
+        $this->assertEquals("NL", $internationalIdentifier->getCountry());
+        $this->assertEquals("NLNDW", $internationalIdentifier->getNationalIdentifier());
+
+        $situations = $messageContainer->getPayload()->getSituations();
+
+        $this->assertCount(1416, $situations);
+
+        /**
+         * @var \BrugOpen\Datex\Model\Situation $situation
+         */
+        $situation = $situations[0];
+
+        $this->assertNotNull($situation);
+        $this->assertEquals('BMS01_NLAMS002120530000008_123379758', $situation->getId());
+        $this->assertEquals('unknown', $situation->getOverallSeverity());
+        $this->assertNotNull($situation->getSituationVersionTime());
+        $this->assertEquals(strtotime('2026-04-01T13:18:12Z'), $situation->getSituationVersionTime()
+            ->getTimestamp());
+
+        $headerInformation = $situation->getHeaderInformation();
+        $this->assertNotNull($headerInformation);
+        $this->assertEquals('noRestriction', $headerInformation->getConfidentiality());
+        $this->assertEquals('real', $headerInformation->getInformationStatus());
+
+        $situationRecord = $situation->getSituationRecord();
+
+        $this->assertNotNull($situationRecord);
+
+        $this->assertEquals('1', $situationRecord->getVersion());
+        $this->assertEquals(strtotime('2026-04-01T13:18:12Z'), $situationRecord->getSituationRecordCreationTime()
+            ->getTimestamp());
+    }
 }

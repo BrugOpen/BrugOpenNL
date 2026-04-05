@@ -132,7 +132,7 @@ class DatexFileParser
 
                 if ($xmlReader->nodeType == 1) {
 
-                    if ($xmlReader->localName == 'messageContainer') {
+                    if (($xmlReader->localName == 'messageContainer') || ($xmlReader->localName == 'putDataInput') || ($xmlReader->localName == 'putSnapshotDataInput')) {
 
                         $atMessageContainerNode = true;
                         break;
