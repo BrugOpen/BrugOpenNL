@@ -17,6 +17,16 @@ class DynamicInformation
     private $messageGenerationTimestamp;
 
     /**
+     * @var ReturnInformation
+     */
+    private $returnInformation;
+
+    /**
+     * @var SessionInformation
+     */
+    private $sessionInformation;
+
+    /**
      * Get the value of exchangeStatus
      *
      * @return string
