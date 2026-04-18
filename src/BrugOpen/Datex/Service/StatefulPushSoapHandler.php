@@ -2,7 +2,9 @@
 
 namespace BrugOpen\Datex\Service;
 
+use BrugOpen\Core\Context;
 use BrugOpen\Datex\Model\ExchangeInformation;
+use BrugOpen\Ndw\Service\PushSessionStateService;
 
 class StatefulPushSoapHandler
 {
@@ -10,6 +12,12 @@ class StatefulPushSoapHandler
      * @var Context
      */
     private $context;
+
+    /**
+     *
+     * @var PushSessionStateService
+     */
+    private $pushSessionStateService;
 
     /**
      *
@@ -41,6 +49,19 @@ class StatefulPushSoapHandler
         }
 
         return $this->log;
+    }
+
+    /**
+     *
+     * @return PushSessionStateService
+     */
+    public function getPushSessionStateService()
+    {
+        if ($this->pushSessionStateService == null) {
+            $this->pushSessionStateService = new PushSessionStateService($this->context);
+        }
+
+        return $this->pushSessionStateService;
     }
 
     /**
@@ -93,6 +114,10 @@ class StatefulPushSoapHandler
 
         $output['dynamicInformation'] = $dynamicInformation;
 
+        // update session state
+        $pushSessionStateService = $this->getPushSessionStateService();
+        $pushSessionStateService->storeSessionState($sessionId, 'openingSession');
+
         return $output;
     }
 
@@ -111,8 +136,14 @@ class StatefulPushSoapHandler
         }
 
         if (!$sessionId) {
+            $sessionId = $this->getCurrentSessionId();
+        }
+
+        if (!$sessionId) {
             $sessionId = $this->createSessionID();
         }
+
+        $this->storeCurrentSessionState($sessionId, 'online');
 
         $output = [];
 
@@ -129,7 +160,7 @@ class StatefulPushSoapHandler
         $output['exchangeContext'] = $exchangeContext;
 
         $dynamicInformation = [];
-        $dynamicInformation['exchangeStatus'] = 'openingSession';
+        $dynamicInformation['exchangeStatus'] = 'online';
 
         $dynamicInformation['messageGenerationTimestamp'] = (new \DateTime())->format('c');
 
@@ -161,8 +192,14 @@ class StatefulPushSoapHandler
         }
 
         if (!$sessionId) {
+            $sessionId = $this->getCurrentSessionId();
+        }
+
+        if (!$sessionId) {
             $sessionId = $this->createSessionID();
         }
+
+        $this->storeCurrentSessionState($sessionId, 'online');
 
         $output = [];
 
@@ -179,7 +216,7 @@ class StatefulPushSoapHandler
         $output['exchangeContext'] = $exchangeContext;
 
         $dynamicInformation = [];
-        $dynamicInformation['exchangeStatus'] = 'openingSession';
+        $dynamicInformation['exchangeStatus'] = 'online';
 
         $dynamicInformation['messageGenerationTimestamp'] = (new \DateTime())->format('c');
 
@@ -210,6 +247,8 @@ class StatefulPushSoapHandler
             }
         }
 
+        $this->storeCurrentSessionState($sessionId, 'offline');
+
         $output = [];
 
         $output['modelBaseVersion'] = '3';
@@ -237,9 +276,95 @@ class StatefulPushSoapHandler
         return $output;
     }
 
+    public function keepAlive($keepAliveInput)
+    {
+        $logger = $this->getLog();
+
+        $sessionId = $this->getCurrentSessionId();
+
+        if ($logger != null) {
+            if ($sessionId != null) {
+                $logger->info('keepAlive called for session ' . $sessionId);
+            } else {
+                $logger->info('keepAlive called with no session ID');
+            }
+        }
+
+        if (!$sessionId) {
+            $sessionId = $this->createSessionID();
+        }
+
+        $this->storeCurrentSessionState($sessionId, 'online');
+
+        $output = [];
+
+        $output['modelBaseVersion'] = '3';
+
+        $exchangeContext = [];
+        $exchangeContext['codedExchangeProtocol'] = 'statefulPush';
+        $exchangeContext['exchangeSpecificationVersion'] = '2020';
+        $exchangeContext['supplierOrCisRequester'] = [];
+        $exchangeContext['supplierOrCisRequester']['internationalIdentifier'] = [];
+        $exchangeContext['supplierOrCisRequester']['internationalIdentifier']['country'] = 'NL';
+        $exchangeContext['supplierOrCisRequester']['internationalIdentifier']['nationalIdentifier'] = 'NLNDW';
+
+        $output['exchangeContext'] = $exchangeContext;
+
+        $dynamicInformation = [];
+        $dynamicInformation['exchangeStatus'] = 'online';
+
+        $dynamicInformation['messageGenerationTimestamp'] = (new \DateTime())->format('c');
+
+        $dynamicInformation['returnInformation'] = [];
+        $dynamicInformation['returnInformation']['returnStatus'] = 'ack';
+
+        $dynamicInformation['sessionInformation'] = [];
+        $dynamicInformation['sessionInformation']['sessionID'] = $sessionId;
+
+        $output['dynamicInformation'] = $dynamicInformation;
+
+        return $output;
+    }
+
+    /**
+     * Create a new session ID using the PushSessionStateService.
+     *
+     * @return string|null
+     */
     public function createSessionID()
     {
-        return date('YmdHis');
+        $sessionId = null;
+        $pushSessionStateService = $this->getPushSessionStateService();
+        if ($pushSessionStateService != null) {
+            $sessionId = $pushSessionStateService->createSessionID();
+        }
+        return $sessionId;
+    }
+
+    /**
+     * Get the current session ID from the session state service.
+     *
+     * @return string|null
+     */
+    public function getCurrentSessionId()
+    {
+        $sessionId = null;
+        $pushSessionStateService = $this->getPushSessionStateService();
+        if ($pushSessionStateService != null) {
+            $pushState = $pushSessionStateService->loadCurrentSessionState();
+            if ($pushState != null) {
+                $sessionId = $pushState->getSessionID();
+            }
+        }
+        return $sessionId;
+    }
+
+    public function storeCurrentSessionState($sessionId, $state)
+    {
+        $pushSessionStateService = $this->getPushSessionStateService();
+        if ($pushSessionStateService != null) {
+            $pushSessionStateService->storeSessionState($sessionId, $state);
+        }
     }
 
     public function getSessionIDFromInput($input)
