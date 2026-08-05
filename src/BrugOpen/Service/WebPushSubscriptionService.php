@@ -364,6 +364,22 @@ class WebPushSubscriptionService
 
                 $updatedValues = array();
 
+                if (isset($pushSubscription['platform']) && ($pushSubscription['platform'] != '')) {
+
+                    if ($pushSubscription['platform'] != $subscription['platform']) {
+
+                        $updatedValues['platform'] = $pushSubscription['platform'];
+                    }
+                }
+
+                if (isset($pushSubscription['client_id']) && ($pushSubscription['client_id'] != '')) {
+
+                    if ($pushSubscription['client_id'] != $subscription['client_id']) {
+
+                        $updatedValues['client_id'] = $pushSubscription['client_id'];
+                    }
+                }
+
                 if (isset($pushSubscription['endpoint']) && ($pushSubscription['endpoint'] != '')) {
 
                     if ($pushSubscription['endpoint'] != $subscription['endpoint']) {
@@ -412,6 +428,15 @@ class WebPushSubscriptionService
                     if (isset($pushSubscription['contentEncoding']) && ($pushSubscription['contentEncoding'] != '')) {
 
                         $updatedValues['content_encoding'] = $pushSubscription['contentEncoding'];
+                    }
+                }
+
+                if (isset($updatedValues['auth_publickey']) && ($updatedValues['auth_publickey'] != '')) {
+
+                    if (!(isset($updatedValues['platform']) && ($updatedValues['platform'] != ''))) {
+
+                        // default to 'web' if platform is not set and auth_publickey is set
+                        $updatedValues['platform'] = 'web';
                     }
                 }
 
