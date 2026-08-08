@@ -18,6 +18,11 @@ class WebPushSubscription
     /**
      * @var string
      */
+    private $platform;
+
+    /**
+     * @var string
+     */
     private $endpoint;
 
     /**
@@ -39,6 +44,11 @@ class WebPushSubscription
      * @var string
      */
     private $contentEncoding;
+
+    /**
+     * @var string
+     */
+    private $clientId;
 
     /**
      * @var \DateTime
@@ -80,6 +90,22 @@ class WebPushSubscription
     public function setGuid($guid)
     {
         $this->guid = $guid;
+    }
+
+    /**
+     * @return string
+     */
+    public function getPlatform()
+    {
+        return $this->platform;
+    }
+
+    /**
+     * @param string $platform
+     */
+    public function setPlatform($platform)
+    {
+        $this->platform = $platform;
     }
 
     /**
@@ -160,6 +186,22 @@ class WebPushSubscription
     public function setContentEncoding($contentEncoding)
     {
         $this->contentEncoding = $contentEncoding;
+    }
+
+    /**
+     * @return string
+     */
+    public function getClientId()
+    {
+        return $this->clientId;
+    }
+
+    /**
+     * @param string $clientId
+     */
+    public function setClientId($clientId)
+    {
+        $this->clientId = $clientId;
     }
 
     /**
