@@ -620,14 +620,27 @@ class WebPushSubscriptionService
 
                             $subscriptionId = $subscription->getId();
 
-                            if ($subscription->getEndpoint() == '') {
-                                continue;
+                            $platform = $subscription->getPlatform();
+                            if ($platform == '') {
+                                $platform = 'web';
                             }
-                            if ($subscription->getAuthPublickey() == '') {
-                                continue;
-                            }
-                            if ($subscription->getAuthToken() == '') {
-                                continue;
+
+                            if ($platform == 'ios') {
+
+                                if ($subscription->getClientId() == '') {
+                                    continue;
+                                }
+                            } else {
+
+                                if ($subscription->getEndpoint() == '') {
+                                    continue;
+                                }
+                                if ($subscription->getAuthPublickey() == '') {
+                                    continue;
+                                }
+                                if ($subscription->getAuthToken() == '') {
+                                    continue;
+                                }
                             }
 
                             $subscribers[$subscriptionId] = $subscription;
@@ -669,11 +682,13 @@ class WebPushSubscriptionService
                     $subscription = new WebPushSubscription();
                     $subscription->setId($subscriptionId);
                     $subscription->setGuid($record['guid']);
+                    $subscription->setPlatform($record['platform']);
                     $subscription->setEndpoint($record['endpoint']);
                     $subscription->setExpirationTime($record['expiration_time']);
                     $subscription->setAuthPublickey($record['auth_publickey']);
                     $subscription->setAuthToken($record['auth_token']);
                     $subscription->setContentEncoding($record['content_encoding']);
+                    $subscription->setClientId($record['client_id']);
                     $subscription->setDatetimeCreated($record['datetime_created']);
                     $subscription->setDatetimeModified($record['datetime_modified']);
 
