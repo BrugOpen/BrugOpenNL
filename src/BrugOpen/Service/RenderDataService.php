@@ -432,28 +432,38 @@ class RenderDataService
         $numOpeningsInAvondSpits = $bridge['lastWeekStats']['numEvening'];
         $numOpeningsInSpits = $numOpeningsInOchtendSpits + $numOpeningsInAvondSpits;
 
-        if ($averageSecsOpen > 0) {
+        if ($numOpenings > 0) {
 
-            $duration = str_replace(' ', "\xc2\xa0", $this->getTextualDuration($averageSecsOpen));
-        }
+            $bodyText .= ' In de afgelopen week is deze brug ' . $numOpenings . ' keer open geweest';
 
-        $bodyText .= ' In de afgelopen week is deze brug ' . $numOpenings . ' keer open geweest en was gemiddeld ' . $duration . ' open.';
+            if ($averageSecsOpen > 0) {
 
-        if ($numOpeningsInSpits > 0) {
-
-            if ($numOpeningsInOchtendSpits == $numOpeningsInSpits) {
-
-                $bodyText .= ' De brug is afgelopen week ' . $numOpeningsInOchtendSpits . ' keer in de ochtendspits open geweest.';
-            } else if ($numOpeningsInAvondSpits == $numOpeningsInSpits) {
-
-                $bodyText .= ' De brug is afgelopen week ' . $numOpeningsInAvondSpits . ' keer in de avondspits open geweest.';
+                $duration = str_replace(' ', "\xc2\xa0", $this->getTextualDuration($averageSecsOpen));
+                $bodyText .= ' en was gemiddeld ' . $duration . ' open.';
             } else {
 
-                $bodyText .= ' De brug is afgelopen week ' . $numOpeningsInSpits . ' keer in de spits open geweest, waarvan ' . $numOpeningsInOchtendSpits . ' keer in de ochtendspits en ' . $numOpeningsInAvondSpits . ' keer in de avondspits.';
+                $bodyText .= '.';
+            }
+
+            if ($numOpeningsInSpits > 0) {
+
+                if ($numOpeningsInOchtendSpits == $numOpeningsInSpits) {
+
+                    $bodyText .= ' De brug is afgelopen week ' . $numOpeningsInOchtendSpits . ' keer in de ochtendspits open geweest.';
+                } else if ($numOpeningsInAvondSpits == $numOpeningsInSpits) {
+
+                    $bodyText .= ' De brug is afgelopen week ' . $numOpeningsInAvondSpits . ' keer in de avondspits open geweest.';
+                } else {
+
+                    $bodyText .= ' De brug is afgelopen week ' . $numOpeningsInSpits . ' keer in de spits open geweest, waarvan ' . $numOpeningsInOchtendSpits . ' keer in de ochtendspits en ' . $numOpeningsInAvondSpits . ' keer in de avondspits.';
+                }
+            } else {
+
+                $bodyText .= ' De brug is afgelopen week alleen buiten de spits open geweest.';
             }
         } else {
 
-            $bodyText .= ' De brug is afgelopen week alleen buiten de spits open geweest.';
+            $bodyText .= ' In de afgelopen week is deze brug 0 keer open geweest.';
         }
 
         return $bodyText;
@@ -461,6 +471,8 @@ class RenderDataService
 
     public function getTextualDuration($secs)
     {
+
+        $duration = '';
 
         if ($secs > 0) {
 
