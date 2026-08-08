@@ -6,8 +6,8 @@ use BrugOpen\Core\Context;
 use BrugOpen\Db\Model\Criterium;
 use BrugOpen\Db\Model\CriteriumFieldComparison;
 use BrugOpen\Db\Service\TableManager;
-use BrugOpen\Model\Operation;
 use BrugOpen\Model\WebPushSubscription;
+use BrugOpen\Service\ApplePushNotificationClient;
 use BrugOpen\Service\WebPushDispatcherClient;
 
 class WebPushNotificationService
@@ -40,6 +40,11 @@ class WebPushNotificationService
      * @var WebPushDispatcherClient
      */
     private $dispatcherClient;
+
+    /**
+     * @var ApplePushNotificationClient
+     */
+    private $applePushNotificationClient;
 
     /**
      * @param Context $context
@@ -108,6 +113,28 @@ class WebPushNotificationService
     public function setDispatcherClient($dispatcherClient)
     {
         $this->dispatcherClient = $dispatcherClient;
+    }
+
+    /**
+     * @return ApplePushNotificationClient
+     */
+    public function getApplePushNotificationClient()
+    {
+        if ($this->applePushNotificationClient == null) {
+
+            $client = new ApplePushNotificationClient($this->context);
+            $this->applePushNotificationClient = $client;
+        }
+
+        return $this->applePushNotificationClient;
+    }
+
+    /**
+     * @param ApplePushNotificationClient $applePushNotificationClient
+     */
+    public function setApplePushNotificationClient($applePushNotificationClient)
+    {
+        $this->applePushNotificationClient = $applePushNotificationClient;
     }
 
     /**
@@ -526,6 +553,7 @@ class WebPushNotificationService
      */
     public function getActiveBridges()
     {
+        $bridges = [];
 
         $currentOperationBridgeIds = array();
 
@@ -663,58 +691,19 @@ class WebPushNotificationService
             $payload['link'] = $targetUrl;
             $payload['tag'] = 'operation' . $operationId;
 
-            $numSent = 0;
-
-            if (is_array($subscriptions) && (count($subscriptions) > 0)) {
-
-                $dispatcherClient = $this->getDispatcherClient();
-
-                if ($dispatcherClient) {
-
-                    $log = $this->getLog();
-
-                    $log->info("Sending push message about operation " . $operationId . ' started to ' . count($subscriptions) . ' subscriber' . (count($subscriptions) != 1 ? 's' : ''));
-
-                    // collect dispatcher messages and log sent messages
-
-                    $messages = array();
-
-                    $payloadJson = json_encode($payload);
-
-                    foreach ($subscriptions as $subscription) {
-
-                        $messageId = null;
-
-                        $insertResult = $this->logPush($subscription->getId(), $operationId, $payload, 1);
-
-                        if (is_numeric($insertResult)) {
-
-                            $messageId = $insertResult;
-                        }
-
-                        $numSent++;
-
-                        $webhookUrl = 'https://brugopen.nl/api/push/webhook/?id=' . $messageId . '&guid=' . $subscription->getGuid();
-
-                        $sub = array();
-                        $sub['endpoint'] = $subscription->getEndpoint();
-                        $sub['keys'] = array();
-                        $sub['keys']['auth'] = $subscription->getAuthToken();
-                        $sub['keys']['p256dh'] = $subscription->getAuthPublickey();
-
-                        $message = array();
-                        $message['subscription'] = $sub;
-                        $message['payload'] = $payloadJson;
-                        $message['webhook'] = $webhookUrl;
-
-                        $messages[] = $message;
-                    }
-
-                    $dispatcherClient->dispatchMessages($messages);
-
-                    $log->info("Sent " . $numSent . ' push message' . ($numSent != 1 ? 's' : ''));
-                }
+            if ($operationStart > $now) {
+                $appleStateText = ($certainty == 2) ? 'gaat mogelijk open' : 'gaat open';
+                $appleCurrentText = $appleStateText . ' ' . $body;
+                $appleTitle = $bridgeTitle . ' gaat open';
+            } else {
+                $appleCurrentText = 'is open ' . $body;
+                $appleTitle = $bridgeTitle . ' is open';
             }
+
+            $appleBody = $this->getAppleBodyText($bridge, $appleCurrentText);
+            $applePayloadJson = $this->createApplePayloadJson($appleTitle, $appleBody, $operationId, $bridge['name']);
+
+            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'started', $applePayloadJson, $bridge['name']);
 
             $markSent = 0;
 
@@ -758,7 +747,7 @@ class WebPushNotificationService
     }
 
     /**
-     * @param Operation $operation
+     * @param array $operation
      * @param WebPushSubscription[] $subscriptions
      */
     public function pushBridgeOpenAndClose($operation, $subscriptions)
@@ -786,58 +775,12 @@ class WebPushNotificationService
             $payload['link'] = $targetUrl;
             $payload['tag'] = 'operation' . $operationId;
 
-            $numSent = 0;
+            $appleCurrentText = 'was open ' . $payload['body'];
+            $appleTitle = $bridgeTitle . ' was open';
+            $appleBody = $this->getAppleBodyText($bridge, $appleCurrentText);
+            $applePayloadJson = $this->createApplePayloadJson($appleTitle, $appleBody, $operationId, $bridge['name']);
 
-            if (is_array($subscriptions) && (count($subscriptions) > 0)) {
-
-                $log = $this->getLog();
-
-                $log->info("Sending push message about operation " . $operationId . ' started and ended to ' . count($subscriptions) . ' subscriber' . (count($subscriptions) != 1 ? 's' : ''));
-
-                $dispatcherClient = $this->getDispatcherClient();
-
-                if ($dispatcherClient) {
-
-                    // collect dispatcher messages and log sent messages
-
-                    $messages = array();
-
-                    $payloadJson = json_encode($payload);
-
-                    foreach ($subscriptions as $subscription) {
-
-                        $messageId = null;
-
-                        $insertResult = $this->logPush($subscription->getId(), $operationId, $payload, 1);
-
-                        if (is_numeric($insertResult)) {
-
-                            $messageId = $insertResult;
-                        }
-
-                        $numSent++;
-
-                        $webhookUrl = 'https://brugopen.nl/api/push/webhook/?id=' . $messageId . '&guid=' . $subscription->getGuid();
-
-                        $sub = array();
-                        $sub['endpoint'] = $subscription->getEndpoint();
-                        $sub['keys'] = array();
-                        $sub['keys']['auth'] = $subscription->getAuthToken();
-                        $sub['keys']['p256dh'] = $subscription->getAuthPublickey();
-
-                        $message = array();
-                        $message['subscription'] = $sub;
-                        $message['payload'] = $payloadJson;
-                        $message['webhook'] = $webhookUrl;
-
-                        $messages[] = $message;
-                    }
-
-                    $dispatcherClient->dispatchMessages($messages);
-                }
-
-                $log->info("Sent " . $numSent . ' push message' . ($numSent != 1 ? 's' : ''));
-            }
+            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'started and ended', $applePayloadJson, $bridge['name']);
 
             $markSent = 0;
 
@@ -882,58 +825,12 @@ class WebPushNotificationService
             $payload['link'] = $targetUrl;
             $payload['tag'] = 'operation' . $operationId;
 
-            $numSent = 0;
+            $appleCurrentText = 'was open ' . $payload['body'];
+            $appleTitle = $bridgeTitle . ' was open';
+            $appleBody = $this->getAppleBodyText($bridge, $appleCurrentText);
+            $applePayloadJson = $this->createApplePayloadJson($appleTitle, $appleBody, $operationId, $bridge['name']);
 
-            if (is_array($subscriptions) && (count($subscriptions) > 0)) {
-
-                $log = $this->getLog();
-
-                $log->info("Sending push message about operation " . $operationId . ' ended to ' . count($subscriptions) . ' subscriber' . (count($subscriptions) != 1 ? 's' : ''));
-
-                $dispatcherClient = $this->getDispatcherClient();
-
-                if ($dispatcherClient) {
-
-                    // collect dispatcher messages and log sent messages
-
-                    $messages = array();
-
-                    $payloadJson = json_encode($payload);
-
-                    foreach ($subscriptions as $subscription) {
-
-                        $messageId = null;
-
-                        $insertResult = $this->logPush($subscription->getId(), $operationId, $payload, 1);
-
-                        if (is_numeric($insertResult)) {
-
-                            $messageId = $insertResult;
-                        }
-
-                        $numSent++;
-
-                        $webhookUrl = 'https://brugopen.nl/api/push/webhook/?id=' . $messageId . '&guid=' . $subscription->getGuid();
-
-                        $sub = array();
-                        $sub['endpoint'] = $subscription->getEndpoint();
-                        $sub['keys'] = array();
-                        $sub['keys']['auth'] = $subscription->getAuthToken();
-                        $sub['keys']['p256dh'] = $subscription->getAuthPublickey();
-
-                        $message = array();
-                        $message['subscription'] = $sub;
-                        $message['payload'] = $payloadJson;
-                        $message['webhook'] = $webhookUrl;
-
-                        $messages[] = $message;
-                    }
-
-                    $dispatcherClient->dispatchMessages($messages);
-                }
-
-                $log->info("Sent " . $numSent . ' push message' . ($numSent != 1 ? 's' : ''));
-            }
+            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'ended', $applePayloadJson, $bridge['name']);
 
             $markSent = 0;
 
@@ -948,6 +845,201 @@ class WebPushNotificationService
         }
 
         return $res;
+    }
+
+    /**
+     * @param int $operationId
+     * @param array $payload
+     * @param WebPushSubscription[] $subscriptions
+     * @param string $operationStatusText
+     * @return int
+     */
+    private function dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, $operationStatusText, $applePayloadJson = null, $bridgeName = '')
+    {
+
+        $numSent = 0;
+
+        if (!(is_array($subscriptions) && (count($subscriptions) > 0))) {
+            return $numSent;
+        }
+
+        $log = $this->getLog();
+
+        $log->info('Sending push message about operation ' . $operationId . ' ' . $operationStatusText . ' to ' . count($subscriptions) . ' subscriber' . (count($subscriptions) != 1 ? 's' : ''));
+
+        $webMessages = array();
+        $iosMessages = array();
+
+        $payloadJson = json_encode($payload);
+
+        if ($applePayloadJson == null) {
+            $applePayloadJson = $this->createApplePayloadJson($payload['title'], $payload['body'], $operationId, $bridgeName);
+        }
+
+        foreach ($subscriptions as $subscription) {
+
+            $platform = $subscription->getPlatform();
+            if ($platform == '') {
+                $platform = 'web';
+            }
+
+            if (($platform == 'ios') && ($subscription->getClientId() == '')) {
+                continue;
+            }
+
+            if (($platform != 'ios') && (($subscription->getEndpoint() == '') || ($subscription->getAuthToken() == '') || ($subscription->getAuthPublickey() == ''))) {
+                continue;
+            }
+
+            $messageId = null;
+
+            $insertResult = $this->logPush($subscription->getId(), $operationId, $payload, 1);
+
+            if (is_numeric($insertResult)) {
+                $messageId = $insertResult;
+            }
+
+            $webhookUrl = 'https://brugopen.nl/api/push/webhook/?id=' . $messageId . '&guid=' . $subscription->getGuid();
+
+            if ($platform == 'ios') {
+
+                $iosMessage = $this->buildApplePushDispatcherMessage($subscription, $applePayloadJson, $webhookUrl, $bridgeName, $operationId);
+
+                if ($iosMessage != null) {
+                    $iosMessages[] = $iosMessage;
+                    $numSent++;
+                }
+            } else {
+
+                $webMessage = $this->buildWebPushDispatcherMessage($subscription, $payloadJson, $webhookUrl);
+
+                if ($webMessage != null) {
+                    $webMessages[] = $webMessage;
+                    $numSent++;
+                }
+            }
+        }
+
+        if (count($webMessages) > 0) {
+
+            $dispatcherClient = $this->getDispatcherClient();
+
+            if ($dispatcherClient) {
+                $dispatcherClient->dispatchMessages($webMessages);
+            }
+        }
+
+        if (count($iosMessages) > 0) {
+
+            $applePushNotificationClient = $this->getApplePushNotificationClient();
+
+            if ($applePushNotificationClient) {
+                $applePushNotificationClient->dispatchMessages($iosMessages);
+            }
+        }
+
+        $log->info('Sent ' . $numSent . ' push message' . ($numSent != 1 ? 's' : ''));
+
+        return $numSent;
+    }
+
+    /**
+     * @param WebPushSubscription $subscription
+     * @param string $payloadJson
+     * @param string $webhookUrl
+     * @return array|null
+     */
+    private function buildWebPushDispatcherMessage($subscription, $payloadJson, $webhookUrl)
+    {
+
+        if ($subscription->getEndpoint() == '') {
+            return null;
+        }
+        if ($subscription->getAuthToken() == '') {
+            return null;
+        }
+        if ($subscription->getAuthPublickey() == '') {
+            return null;
+        }
+
+        $sub = array();
+        $sub['endpoint'] = $subscription->getEndpoint();
+        $sub['keys'] = array();
+        $sub['keys']['auth'] = $subscription->getAuthToken();
+        $sub['keys']['p256dh'] = $subscription->getAuthPublickey();
+
+        $message = array();
+        $message['subscription'] = $sub;
+        $message['payload'] = $payloadJson;
+        $message['webhook'] = $webhookUrl;
+
+        return $message;
+    }
+
+    /**
+     * @param WebPushSubscription $subscription
+     * @param string $payloadJson
+     * @param string $webhookUrl
+     * @return array|null
+     */
+    private function buildApplePushDispatcherMessage($subscription, $payloadJson, $webhookUrl, $bridgeName, $operationId)
+    {
+
+        if ($subscription->getClientId() == '') {
+            return null;
+        }
+
+        $message = array();
+        $message['clientId'] = $subscription->getClientId();
+        $message['payload'] = $payloadJson;
+        $message['webhook'] = $webhookUrl;
+
+        return $message;
+    }
+
+    /**
+     * @param string $title
+     * @param string $body
+     * @param int $operationId
+     * @param string $bridgeName
+     * @return string
+     */
+    private function createApplePayloadJson($title, $body, $operationId, $bridgeName)
+    {
+
+        $applePayload = array(
+            'aps' => array(
+                'alert' => array(
+                    'title' => $title,
+                    'body' => $body
+                ),
+                'sound' => 'default'
+            ),
+            'bridgeName' => $bridgeName,
+            'operationId' => $operationId
+        );
+
+        return json_encode($applePayload);
+    }
+
+    /**
+     * @param array $bridge
+     * @return string
+     */
+    private function getAppleBodyText($bridge, $currentText)
+    {
+
+        $cityPart = '';
+
+        if (array_key_exists('city', $bridge) && ($bridge['city'] != '')) {
+            if (array_key_exists('city2', $bridge) && ($bridge['city2'] != '')) {
+                $cityPart = ' tussen ' . $bridge['city'] . ' en ' . $bridge['city2'];
+            } else {
+                $cityPart = ' in ' . $bridge['city'];
+            }
+        }
+
+        return 'De ' . $bridge['title'] . $cityPart . ' ' . $currentText;
     }
 
     /**
