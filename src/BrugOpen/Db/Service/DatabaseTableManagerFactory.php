@@ -210,11 +210,13 @@ class DatabaseTableManagerFactory implements ServiceFactory
         $config['bo_push_message']['datetime_modified'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_push_subscription']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_push_subscription']['guid'] = DatabaseTableManager::COLUMN_STR + DatabaseTableManager::COLUMN_NOTNULL;
+        $config['bo_push_subscription']['platform'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_push_subscription']['endpoint'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_push_subscription']['expiration_time'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_push_subscription']['auth_publickey'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_push_subscription']['auth_token'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_push_subscription']['content_encoding'] = DatabaseTableManager::COLUMN_STR;
+        $config['bo_push_subscription']['client_id'] = DatabaseTableManager::COLUMN_STR;
         $config['bo_push_subscription']['datetime_created'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_push_subscription']['datetime_modified'] = DatabaseTableManager::COLUMN_DATE + DatabaseTableManager::COLUMN_TIME + DatabaseTableManager::COLUMN_NOTNULL;
         $config['bo_push_subscription_schedule']['id'] = DatabaseTableManager::COLUMN_INT + DatabaseTableManager::COLUMN_NOTNULL;
