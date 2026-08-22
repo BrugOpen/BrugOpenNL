@@ -8,6 +8,7 @@ use BrugOpen\Db\Model\CriteriumFieldComparison;
 use BrugOpen\Db\Service\TableManager;
 use BrugOpen\Model\WebPushSubscription;
 use BrugOpen\Service\ApplePushNotificationClient;
+use BrugOpen\Service\FirebasePushNotificationClient;
 use BrugOpen\Service\WebPushDispatcherClient;
 
 class WebPushNotificationService
@@ -45,6 +46,11 @@ class WebPushNotificationService
      * @var ApplePushNotificationClient
      */
     private $applePushNotificationClient;
+
+    /**
+     * @var FirebasePushNotificationClient
+     */
+    private $firebasePushNotificationClient;
 
     /**
      * @param Context $context
@@ -110,6 +116,9 @@ class WebPushNotificationService
         return $this->dispatcherClient;
     }
 
+    /**
+     * @param WebPushDispatcherClient $dispatcherClient
+     */
     public function setDispatcherClient($dispatcherClient)
     {
         $this->dispatcherClient = $dispatcherClient;
@@ -138,6 +147,28 @@ class WebPushNotificationService
     }
 
     /**
+     * @return FirebasePushNotificationClient
+     */
+    public function getFirebasePushNotificationClient()
+    {
+        if ($this->firebasePushNotificationClient == null) {
+
+            $client = new FirebasePushNotificationClient($this->context);
+            $this->firebasePushNotificationClient = $client;
+        }
+
+        return $this->firebasePushNotificationClient;
+    }
+
+    /**
+     * @param FirebasePushNotificationClient $firebasePushNotificationClient
+     */
+    public function setFirebasePushNotificationClient($firebasePushNotificationClient)
+    {
+        $this->firebasePushNotificationClient = $firebasePushNotificationClient;
+    }
+
+    /**
      * @return WebPushSubscriptionService
      */
     public function getSubscriptionService()
@@ -160,6 +191,10 @@ class WebPushNotificationService
         $this->subscriptionService = $subscriptionService;
     }
 
+    /**
+     * @param int $operationId
+     * @return int|null
+     */
     public function getBridgeIdByOperationId($operationId)
     {
         $bridgeId = null;
@@ -703,7 +738,10 @@ class WebPushNotificationService
             $appleBody = $this->getAppleBodyText($bridge, $appleCurrentText);
             $applePayloadJson = $this->createApplePayloadJson($appleTitle, $appleBody, $operationId, $bridge['name']);
 
-            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'started', $applePayloadJson, $bridge['name']);
+            $androidBody = $this->getAndroidBodyText($bridge, $appleCurrentText);
+            $androidPayloadJson = $this->createAndroidPayloadJson($title, $androidBody, $operationId, $bridge['name']);
+
+            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'started', $applePayloadJson, $androidPayloadJson, $bridge['name']);
 
             $markSent = 0;
 
@@ -720,6 +758,10 @@ class WebPushNotificationService
         return $res;
     }
 
+    /**
+     * @param array $bridge
+     * @return string
+     */
     public function getPushBridgeTitle($bridge)
     {
         $title = $bridge['title'];
@@ -731,6 +773,10 @@ class WebPushNotificationService
         return $title;
     }
 
+    /**
+     * @param array $bridge
+     * @return string
+     */
     public function getTargetUrl($bridge)
     {
 
@@ -780,7 +826,10 @@ class WebPushNotificationService
             $appleBody = $this->getAppleBodyText($bridge, $appleCurrentText);
             $applePayloadJson = $this->createApplePayloadJson($appleTitle, $appleBody, $operationId, $bridge['name']);
 
-            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'started and ended', $applePayloadJson, $bridge['name']);
+            $androidBody = $this->getAndroidBodyText($bridge, $appleCurrentText);
+            $androidPayloadJson = $this->createAndroidPayloadJson($title, $androidBody, $operationId, $bridge['name']);
+
+            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'started and ended', $applePayloadJson, $androidPayloadJson, $bridge['name']);
 
             $markSent = 0;
 
@@ -830,7 +879,10 @@ class WebPushNotificationService
             $appleBody = $this->getAppleBodyText($bridge, $appleCurrentText);
             $applePayloadJson = $this->createApplePayloadJson($appleTitle, $appleBody, $operationId, $bridge['name']);
 
-            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'ended', $applePayloadJson, $bridge['name']);
+            $androidBody = $this->getAndroidBodyText($bridge, $appleCurrentText);
+            $androidPayloadJson = $this->createAndroidPayloadJson($title, $androidBody, $operationId, $bridge['name']);
+
+            $numSent = $this->dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, 'ended', $applePayloadJson, $androidPayloadJson, $bridge['name']);
 
             $markSent = 0;
 
@@ -852,9 +904,12 @@ class WebPushNotificationService
      * @param array $payload
      * @param WebPushSubscription[] $subscriptions
      * @param string $operationStatusText
+     * @param string|null $androidPayloadJson
+     * @param string|null $applePayloadJson
+     * @param string $bridgeName
      * @return int
      */
-    private function dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, $operationStatusText, $applePayloadJson = null, $bridgeName = '')
+    private function dispatchPayloadToSubscriptions($operationId, $payload, $subscriptions, $operationStatusText, $applePayloadJson, $androidPayloadJson, $bridgeName)
     {
 
         $numSent = 0;
@@ -869,11 +924,16 @@ class WebPushNotificationService
 
         $webMessages = array();
         $iosMessages = array();
+        $androidMessages = array();
 
         $payloadJson = json_encode($payload);
 
         if ($applePayloadJson == null) {
             $applePayloadJson = $this->createApplePayloadJson($payload['title'], $payload['body'], $operationId, $bridgeName);
+        }
+
+        if ($androidPayloadJson == null) {
+            $androidPayloadJson = $this->createAndroidPayloadJson($payload['title'], $payload['body'], $operationId, $bridgeName);
         }
 
         foreach ($subscriptions as $subscription) {
@@ -887,7 +947,11 @@ class WebPushNotificationService
                 continue;
             }
 
-            if (($platform != 'ios') && (($subscription->getEndpoint() == '') || ($subscription->getAuthToken() == '') || ($subscription->getAuthPublickey() == ''))) {
+            if (($platform == 'android') && ($subscription->getClientId() == '')) {
+                continue;
+            }
+
+            if (($platform != 'ios') && ($platform != 'android') && (($subscription->getEndpoint() == '') || ($subscription->getAuthToken() == '') || ($subscription->getAuthPublickey() == ''))) {
                 continue;
             }
 
@@ -907,6 +971,14 @@ class WebPushNotificationService
 
                 if ($iosMessage != null) {
                     $iosMessages[] = $iosMessage;
+                    $numSent++;
+                }
+            } else if ($platform == 'android') {
+
+                $androidMessage = $this->buildFirebasePushDispatcherMessage($subscription, $androidPayloadJson, $webhookUrl);
+
+                if ($androidMessage != null) {
+                    $androidMessages[] = $androidMessage;
                     $numSent++;
                 }
             } else {
@@ -935,6 +1007,15 @@ class WebPushNotificationService
 
             if ($applePushNotificationClient) {
                 $applePushNotificationClient->dispatchMessages($iosMessages);
+            }
+        }
+
+        if (count($androidMessages) > 0) {
+
+            $firebasePushNotificationClient = $this->getFirebasePushNotificationClient();
+
+            if ($firebasePushNotificationClient) {
+                $firebasePushNotificationClient->dispatchMessages($androidMessages);
             }
         }
 
@@ -998,6 +1079,27 @@ class WebPushNotificationService
     }
 
     /**
+     * @param WebPushSubscription $subscription
+     * @param string $payloadJson
+     * @param string $webhookUrl
+     * @return array|null
+     */
+    private function buildFirebasePushDispatcherMessage($subscription, $payloadJson, $webhookUrl)
+    {
+
+        if ($subscription->getClientId() == '') {
+            return null;
+        }
+
+        $message = array();
+        $message['clientId'] = $subscription->getClientId();
+        $message['payload'] = $payloadJson;
+        $message['webhook'] = $webhookUrl;
+
+        return $message;
+    }
+
+    /**
      * @param string $title
      * @param string $body
      * @param int $operationId
@@ -1023,10 +1125,56 @@ class WebPushNotificationService
     }
 
     /**
+     * @param string $title
+     * @param string $body
+     * @param int $operationId
+     * @param string $bridgeName
+     * @return string
+     */
+    private function createAndroidPayloadJson($title, $body, $operationId, $bridgeName)
+    {
+
+        $androidPayload = array(
+            'notification' => array(
+                'title' => $title,
+                'body' => $body
+            ),
+            'data' => array(
+                'bridgeName' => $bridgeName,
+                'operationId' => (string)$operationId
+            )
+        );
+
+        return json_encode($androidPayload);
+    }
+
+    /**
      * @param array $bridge
+     * @param string $currentText
      * @return string
      */
     private function getAppleBodyText($bridge, $currentText)
+    {
+
+        $cityPart = '';
+
+        if (array_key_exists('city', $bridge) && ($bridge['city'] != '')) {
+            if (array_key_exists('city2', $bridge) && ($bridge['city2'] != '')) {
+                $cityPart = ' tussen ' . $bridge['city'] . ' en ' . $bridge['city2'];
+            } else {
+                $cityPart = ' in ' . $bridge['city'];
+            }
+        }
+
+        return 'De ' . $bridge['title'] . $cityPart . ' ' . $currentText;
+    }
+
+    /**
+     * @param array $bridge
+     * @param string $currentText
+     * @return string
+     */
+    private function getAndroidBodyText($bridge, $currentText)
     {
 
         $cityPart = '';
@@ -1096,6 +1244,13 @@ class WebPushNotificationService
         return $bridge;
     }
 
+    /**
+     * @param int $subscriptionId
+     * @param int $operationId
+     * @param array $payload
+     * @param bool $result
+     * @return int|null
+     */
     public function logPush($subscriptionId, $operationId, $payload, $result)
     {
 
@@ -1120,6 +1275,10 @@ class WebPushNotificationService
         return $res;
     }
 
+    /**
+     * @param int $operationId
+     * @param int $numSent
+     */
     public function markOperationStartPushSent($operationId, $numSent)
     {
 
@@ -1138,6 +1297,10 @@ class WebPushNotificationService
         }
     }
 
+    /**
+     * @param int $operationId
+     * @param int $numSent
+     */
     public function markOperationEndPushSent($operationId, $numSent)
     {
 
