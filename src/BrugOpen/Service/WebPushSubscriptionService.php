@@ -625,7 +625,7 @@ class WebPushSubscriptionService
                                 $platform = 'web';
                             }
 
-                            if ($platform == 'ios') {
+                            if (($platform == 'ios') || ($platform == 'android')) {
 
                                 if ($subscription->getClientId() == '') {
                                     continue;
